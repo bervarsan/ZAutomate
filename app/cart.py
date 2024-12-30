@@ -10,6 +10,7 @@ uses madao.
 import time
 from player_madao import Player
 
+
 class Cart(object):
     """The Cart class contains the metadata and audio stream of a cart."""
     cart_id = None
@@ -41,7 +42,7 @@ class Cart(object):
         try:
             self._player = Player(filename)
         except IOError:
-            print time.asctime() + " :=: Cart :: could not load audio file " + filename
+            print(time.asctime() + " :=: Cart :: could not load audio file " + filename)
 
     def is_playable(self):
         """Get whether the cart has an audio stream."""
@@ -56,12 +57,12 @@ class Cart(object):
 
         :param callback: function to call if the stream ends
         """
-        print time.asctime() + " :=: Cart :: Start :: " + self.issuer + " - " + self.title
+        print(time.asctime() + " :=: Cart :: Start :: " + self.issuer + " - " + self.title)
         self._player.play(callback)
 
     def stop(self):
         """Stop the cart's audio stream."""
-        print time.asctime() + " :=: Cart :: Stop :: " + self.issuer + " - " + self.title
+        print(time.asctime() + " :=: Cart :: Stop :: " + self.issuer + " - " + self.title)
         self._player.stop()
 
     def get_meter_data(self):

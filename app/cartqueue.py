@@ -25,7 +25,7 @@ AUTOMATION_CARTS = [
         "minute": 0,
         "max_delta": 6000
     },
-     {
+    {
         "type": "PSA",
         "minute": 15,
         "max_delta": 6000
@@ -35,7 +35,7 @@ AUTOMATION_CARTS = [
         "minute": 30,
         "max_delta": 6000
     },
-     {
+    {
         "type": "PSA",
         "minute": 45,
         "max_delta": 6000
@@ -43,6 +43,7 @@ AUTOMATION_CARTS = [
 ]
 
 PLAYLIST_MIN_LENGTH = 10
+
 
 def is_artist_in_list(cart, array):
     """Get whether the artist of a cart is in a list of carts.
@@ -58,6 +59,7 @@ def is_artist_in_list(cart, array):
             return True
 
     return False
+
 
 class CartQueue(object):
     """The CartQueue class is a queue that generates radio content.
@@ -100,7 +102,7 @@ class CartQueue(object):
 
     def _enqueue(self):
         """Start the first track in the queue."""
-        print time.asctime() + " :=: CartQueue :: Enqueuing " + self._queue[0].cart_id
+        print(time.asctime() + " :=: CartQueue :: Enqueuing " + self._queue[0].cart_id)
 
         self._queue[0].start(self.transition)
         self._on_cart_start()
@@ -109,7 +111,7 @@ class CartQueue(object):
 
     def _dequeue(self):
         """Stop and dequeue the first track in the queue."""
-        print time.asctime() + " :=: CartQueue :: Dequeuing " + self._queue[0].cart_id
+        print(time.asctime() + " :=: CartQueue :: Dequeuing " + self._queue[0].cart_id)
 
         self._queue[0].stop()
         self._on_cart_stop()
@@ -157,9 +159,10 @@ class CartQueue(object):
             playlist = database.get_playlist(self._show_id)
 
             # add each track whose artist isn't already in the queue or played list
-            self._queue.extend([t for t in playlist if not is_artist_in_list(t, self._played) and not is_artist_in_list(t, self._queue)])
+            self._queue.extend([t for t in playlist if
+                                not is_artist_in_list(t, self._played) and not is_artist_in_list(t, self._queue)])
 
-            print time.asctime() + " :=: CartQueue :: Added tracks, length is " + (str)(len(self._queue))
+            print(time.asctime() + " :=: CartQueue :: Added tracks, length is " + str(len(self._queue)))
 
         self._gen_start_times(begin_index)
 
@@ -200,10 +203,10 @@ class CartQueue(object):
         cart = database.get_cart(cart_type)
 
         if cart is None:
-                print time.asctime() + " :=: CartQueue :: Could not find cart of type " + cart_type
-                return
+            print(time.asctime() + " :=: CartQueue :: Could not find cart of type " + cart_type)
+            return
 
-        print time.asctime() + " :=: CartQueue :: Target insert time is " + (str)(target)
+        print(time.asctime() + " :=: CartQueue :: Target insert time is " + str(target))
 
         # find the position in queue with the closest start time to target
         min_index = -1
@@ -218,13 +221,13 @@ class CartQueue(object):
             elif delta > min_delta:
                 break
 
-        print time.asctime() + " :=: CartQueue :: min_index is " + (str)(min_index)
-        print time.asctime() + " :=: CartQueue :: min_delta is " + (str)(min_delta)
+        print(time.asctime() + " :=: CartQueue :: min_index is " + str(min_index))
+        print(time.asctime() + " :=: CartQueue :: min_delta is " + str(min_delta))
 
         if min_delta.seconds <= max_delta:
-            print time.asctime() + " :=: CartQueue :: Cart inserted within target window"
+            print(time.asctime() + " :=: CartQueue :: Cart inserted within target window")
         else:
-            print time.asctime() + " :=: CartQueue :: Cart not inserted within target window"
+            print(time.asctime() + " :=: CartQueue :: Cart not inserted within target window")
 
         # insert cart into the queue
         self._queue.insert(min_index, cart)
@@ -262,7 +265,7 @@ class CartQueue(object):
 
         # refill the queue if it is too short
         if len(self._queue) < PLAYLIST_MIN_LENGTH:
-            print time.asctime() + " :=: CartQueue :: Refilling tracks"
+            print(time.asctime() + " :=: CartQueue :: Refilling tracks")
             self.add_tracks()
             self._played = []
             self._remove_carts()
@@ -272,7 +275,7 @@ class CartQueue(object):
         carts = [c for c in self._queue if c.cart_type in CART_TYPES]
 
         if len(carts) is 0:
-            print time.asctime() + " :=: CartQueue :: Refilling carts"
+            print(time.asctime() + " :=: CartQueue :: Refilling carts")
             self._insert_carts()
 
         if self._is_playing is True:
@@ -280,5 +283,5 @@ class CartQueue(object):
             self._enqueue()
         else:
             # remove all carts if the queue was stopped
-            print time.asctime() + " :=: CartQueue :: Removing all carts"
+            print(time.asctime() + " :=: CartQueue :: Removing all carts")
             self._remove_carts()

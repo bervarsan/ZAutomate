@@ -13,6 +13,7 @@ URL_STUDIOSEARCH = "https://wsbf.net/api/zautomate/studio_search.php"
 URL_LOG_CART = "https://wsbf.net/api/zautomate/log_cart.php"
 URL_LOG_TRACK = "https://wsbf.net/api/zautomate/log_track.php"
 
+
 def get_new_show_id(show_id):
     """Get a new show ID for queueing playlists.
 
@@ -22,8 +23,9 @@ def get_new_show_id(show_id):
         res = requests.get(URL_AUTOSTART, params={"showid": show_id})
         return res.json()
     except requests.exceptions.ConnectionError:
-        print "Error: Could not fetch starting show ID."
+        print("Error: Could not fetch starting show ID.")
         return -1
+
 
 def get_cart(cart_type):
     """Get a random cart of a given type.
@@ -64,9 +66,10 @@ def get_cart(cart_type):
             else:
                 count += 1
     except requests.exceptions.ConnectionError:
-        print time.asctime() + " :=: Error: Could not fetch cart."
+        print(time.asctime() + " :=: Error: Could not fetch cart.")
 
     return None
+
 
 def get_playlist(show_id):
     """Get the playlist from a past show.
@@ -84,14 +87,16 @@ def get_playlist(show_id):
             filename = LIBRARY_PREFIX + track_res["file_name"]
             track_id = track_res["lb_album_code"] + "-" + track_res["lb_track_num"]
 
-            track = Cart(track_id, track_res["lb_track_name"], track_res["artist_name"], track_res["rotation"], filename)
+            track = Cart(track_id, track_res["lb_track_name"], track_res["artist_name"], track_res["rotation"],
+                         filename)
 
             if track.is_playable():
                 playlist.append(track)
     except requests.exceptions.ConnectionError:
-        print "Error: Could not fetch playlist."
+        print("Error: Could not fetch playlist.")
 
     return playlist
+
 
 def get_carts():
     """Load a dictionary of cart arrays for each cart type."""
@@ -117,9 +122,10 @@ def get_carts():
                     carts[cart_type].append(cart)
 
     except requests.exceptions.ConnectionError:
-        print time.asctime() + " :=: Error: Could not fetch carts."
+        print(time.asctime() + " :=: Error: Could not fetch carts.")
 
     return carts
+
 
 def search_library(query):
     """Search the music library for tracks and carts.
@@ -147,9 +153,10 @@ def search_library(query):
             if track.is_playable():
                 results.append(track)
     except requests.exceptions.ConnectionError:
-        print "Error: Could not fetch search results."
+        print("Error: Could not fetch search results.")
 
     return results
+
 
 def log_cart(cart_id):
     """Log a cart or track.
@@ -163,7 +170,8 @@ def log_cart(cart_id):
             album_id = cart_id.split("-")[0]
             disc_num = 1
             track_num = cart_id.split("-")[1]
-            res = requests.post(URL_LOG_TRACK, params={"albumID": album_id, "disc_num": disc_num, "track_num": track_num})
-        print res.text
+            res = requests.post(URL_LOG_TRACK,
+                                params={"albumID": album_id, "disc_num": disc_num, "track_num": track_num})
+        print(res.text)
     except requests.exceptions.ConnectionError:
-        print time.asctime() + " :=: Caught error: Could not access cart logger."
+        print(time.asctime() + " :=: Caught error: Could not access cart logger.")

@@ -1,7 +1,7 @@
 """The cartgrid module provides the Grid class."""
 import time
-import Tkinter
-from Tkinter import Frame, Canvas
+import tkinter
+from tkinter import Frame, Canvas
 import database
 
 CART_WIDTH = 175
@@ -15,7 +15,7 @@ COLOR_TYPES_NEW = {
     "Underwriting": "#BF5FFF",
     "StationID": "#FF6600",
     "Promotion": "#888888",  # TODO: set Promotion color
-    "R": "#888888",          # TODO: set Recently Reviewed color
+    "R": "#888888",  # TODO: set Recently Reviewed color
     "N": "#FF1010",
     "H": "#FF4242",
     "M": "#FF6969",
@@ -27,7 +27,7 @@ COLOR_TYPES_PLAYED = {
     "PSA": "#006A33",
     "StationID": "#8B4500",
     "Promotion": "#AAAAAA",  # TODO: set Promotion color
-    "R": "#AAAAAA",          # TODO: set Recently Reviewed color
+    "R": "#AAAAAA",  # TODO: set Recently Reviewed color
     "N": "#2258D5",
     "H": "#4D7CE6",
     "M": "#6D92E6",
@@ -41,12 +41,14 @@ COLOR_LENGTH = "#FFFF00"
 
 FONT = ("Helvetica", 10, "bold")
 
+
 def get_fmt_time(seconds):
     """Get a formatted time string from a number of seconds.
 
     :param seconds
     """
     return time.strftime("%M:%S", time.localtime(seconds))
+
 
 class GridObj(Frame):
     """The GridObj class is a UI element for a cell in a grid of carts."""
@@ -71,7 +73,8 @@ class GridObj(Frame):
         :param on_right_click: callback for right click
         :param on_cart_end: callback for when a cart ends
         """
-        Frame.__init__(self, parent.master, bd=1, relief=Tkinter.SUNKEN, bg=COLOR_DEFAULT, width=CART_WIDTH, height=CART_HEIGHT)
+        Frame.__init__(self, parent.master, bd=1, relief=tkinter.SUNKEN, bg=COLOR_DEFAULT, width=CART_WIDTH,
+                       height=CART_HEIGHT)
         self._key = key
         self._on_left_click = on_left_click
         self._on_right_click = on_right_click
@@ -79,9 +82,12 @@ class GridObj(Frame):
 
         self._rect = Canvas(self, width=CART_WIDTH, height=CART_HEIGHT, bg=COLOR_DEFAULT)
 
-        self._title = self._rect.create_text(5, 5, width=CART_WIDTH, anchor=Tkinter.NW, font=FONT, fill=COLOR_TITLE, text="")
-        self._issuer = self._rect.create_text(CART_WIDTH / 2, 25, width=CART_WIDTH, anchor=Tkinter.N, font=FONT, fill=COLOR_ISSUER, text="")
-        self._length = self._rect.create_text(CART_WIDTH / 2, CART_HEIGHT - 15, anchor=Tkinter.S, font=FONT, fill=COLOR_LENGTH, text="")
+        self._title = self._rect.create_text(5, 5, width=CART_WIDTH, anchor=tkinter.NW, font=FONT, fill=COLOR_TITLE,
+                                             text="")
+        self._issuer = self._rect.create_text(CART_WIDTH / 2, 25, width=CART_WIDTH, anchor=tkinter.N, font=FONT,
+                                              fill=COLOR_ISSUER, text="")
+        self._length = self._rect.create_text(CART_WIDTH / 2, CART_HEIGHT - 15, anchor=tkinter.S, font=FONT,
+                                              fill=COLOR_LENGTH, text="")
 
         self._rect.bind("<ButtonPress-1>", self._left_click)
         self._rect.bind("<Button-2>", self._right_click)
@@ -148,6 +154,7 @@ class GridObj(Frame):
         """Respond to the end of the cart."""
         self._on_cart_end(self._key)
 
+
 class Grid(object):
     """The Grid class is a grid of carts."""
     _rows = None
@@ -168,7 +175,7 @@ class Grid(object):
         self._grid = {}
         for row in range(1, self._rows + 1):
             for col in range(1, self._cols + 1):
-                key = (str)(row) + "x" + (str)(col)
+                key = str(row) + "x" + str(col)
                 self._grid[key] = GridObj(parent, key, self._left_click, self._right_click, self._cart_end)
                 self._grid[key].grid(row=row + 1, column=col - 1)
 

@@ -5,12 +5,13 @@ audio stream. However, I have not been able to use it because the
 tkSnack module does not seem to load correctly.
 """
 import time
-from Tkinter import Tk
+from tkinter import Tk
 import tkSnack
 
 # TODO: provide reference to Tk root
 root = Tk()
 tkSnack.initializeSnack(root)
+
 
 class Player(object):
     """The Player class provides an audio stream for a file."""
@@ -49,7 +50,7 @@ class Player(object):
         :param callback: function to call if the stream finishes
         """
         if self._is_playing:
-            print time.asctime() + " :=: Player_snack :: Tried to start, but already playing"
+            print(time.asctime() + " :=: Player_snack :: Tried to start, but already playing")
             return
 
         self._is_playing = True
@@ -59,7 +60,7 @@ class Player(object):
     def stop(self):
         """Stop the audio stream."""
         if not self._is_playing:
-            print time.asctime() + " :=: Player_snack :: Tried to stop, but not playing"
+            print(time.asctime() + " :=: Player_snack :: Tried to stop, but not playing")
             return
 
         self._is_playing = False

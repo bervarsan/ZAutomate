@@ -2,8 +2,8 @@
 
 """The CartMachine module provides a GUI for playing carts."""
 import random
-import Tkinter
-from Tkinter import Frame, Label, Button
+import tkinter
+from tkinter import Frame, Label, Button
 import database
 from cartgrid import Grid
 from meter import Meter
@@ -44,6 +44,7 @@ FONT_RELOAD = ('Helvetica', 24, 'bold')
 
 TEXT_TITLE = "ZAutomate :: Cart Machine"
 TEXT_RELOAD = "Reload"
+
 
 def progression_radius(rows, cols, corner, radius):
     """Generate a progression of coordinates at a given radius from a corner.
@@ -91,6 +92,7 @@ def progression_radius(rows, cols, corner, radius):
 
     return array
 
+
 def progression(rows, cols, corner):
     """Generate a progression of coordinates from a corner.
 
@@ -109,9 +111,10 @@ def progression(rows, cols, corner):
         array.extend(progression_radius(rows, cols, corner, radius))
 
     # temporary code to transform tuples into strings
-    array = [(str)(elem[0])+"x"+(str)(elem[1]) for elem in array]
+    array = [str(elem[0]) + "x" + str(elem[1]) for elem in array]
 
     return array
+
 
 class CartMachine(Frame):
     """The CartMachine class is a GUI that provides a grid of carts."""
@@ -133,13 +136,13 @@ class CartMachine(Frame):
 
         # initialize the title
         title = Label(self.master, font=FONT_TITLE, text=TEXT_TITLE)
-        title.grid(row=0, column=0, columnspan=GRID_COLS - 1, sticky=Tkinter.N)
+        title.grid(row=0, column=0, columnspan=GRID_COLS - 1, sticky=tkinter.N)
 
         # initialize the reload button
         reload_button = Button(self.master, \
-            bg=COLOR_RELOAD_BG, fg=COLOR_RELOAD_FG, \
-            font=FONT_RELOAD, text=TEXT_RELOAD, \
-            command=self.reload)
+                               bg=COLOR_RELOAD_BG, fg=COLOR_RELOAD_FG, \
+                               font=FONT_RELOAD, text=TEXT_RELOAD, \
+                               command=self.reload)
         reload_button.grid(row=0, column=GRID_COLS - 1)
 
         # initialize the meter
@@ -173,7 +176,7 @@ class CartMachine(Frame):
         for cart_type in CONFIG_CARTS:
             progs[cart_type] = progression(GRID_ROWS, GRID_COLS, CONFIG_CARTS[cart_type]["corner"])
 
-        # get a dictonary of carts for each cart type
+        # get a dictionary of carts for each cart type
         carts = database.get_carts()
 
         # apply shuffling and limiting to each cart type
@@ -217,10 +220,10 @@ class CartMachine(Frame):
         if self._grid.is_playing():
             return
 
-        print "Reloading the Cart Machine..."
+        print("Reloading the Cart Machine...")
         self._grid.clear()
         self._load()
-        print "Cart Machine reloaded."
+        print("Cart Machine reloaded.")
 
     def _cart_start(self):
         """Start the meter when a cart starts."""
@@ -237,5 +240,6 @@ class CartMachine(Frame):
     def _get_meter_data(self):
         """Get meter data for the currently active cart."""
         return self._grid.get_active_cell().get_cart().get_meter_data()
+
 
 CartMachine()

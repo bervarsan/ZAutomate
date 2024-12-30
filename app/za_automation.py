@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """The Automation module provides a GUI for radio automation."""
-import Tkinter
-from Tkinter import Label, StringVar, Button, Frame, Scrollbar, Listbox
+import tkinter
+from tkinter import Label, StringVar, Button, Frame, Scrollbar, Listbox
 from cartqueue import CartQueue
 from meter import Meter
 
@@ -31,6 +31,7 @@ TEXT_PLAYLIST_TIME = "Start Time"
 TEXT_PLAYLIST_TRACK = "Track"
 TEXT_PLAYLIST_ARTIST = "Artist"
 
+
 class Automation(Frame):
     """The Automation class is a GUI that provides radio automation."""
     _state = None
@@ -57,7 +58,8 @@ class Automation(Frame):
 
         self._button_text = StringVar()
 
-        self._button = Button(self.master, textvariable=self._button_text, command=self._update_state, width=16, height=2)
+        self._button = Button(self.master, textvariable=self._button_text, command=self._update_state, width=16,
+                              height=2)
         self._button.config(bd=2)
         self._button.grid(row=0, column=3)
 
@@ -66,21 +68,24 @@ class Automation(Frame):
         self._meter.grid(row=1, column=0, columnspan=4)
 
         # initialize playlist view
-        playlist = Frame(self.master, bd=2, relief=Tkinter.SUNKEN)
-        Label(playlist, font=FONT, anchor=Tkinter.CENTER, width=16, text=TEXT_PLAYLIST_TIME).grid(row=0, column=0)
-        Label(playlist, font=FONT, anchor=Tkinter.CENTER, width=32, text=TEXT_PLAYLIST_TRACK).grid(row=0, column=1)
-        Label(playlist, font=FONT, anchor=Tkinter.CENTER, width=32, text=TEXT_PLAYLIST_ARTIST).grid(row=0, column=2)
+        playlist = Frame(self.master, bd=2, relief=tkinter.SUNKEN)
+        Label(playlist, font=FONT, anchor=tkinter.CENTER, width=16, text=TEXT_PLAYLIST_TIME).grid(row=0, column=0)
+        Label(playlist, font=FONT, anchor=tkinter.CENTER, width=32, text=TEXT_PLAYLIST_TRACK).grid(row=0, column=1)
+        Label(playlist, font=FONT, anchor=tkinter.CENTER, width=32, text=TEXT_PLAYLIST_ARTIST).grid(row=0, column=2)
 
         inner_playlist = Frame(playlist)
-        scroll = Scrollbar(inner_playlist, orient=Tkinter.VERTICAL, command=self._scroll_playlist)
-        self._list_time = Listbox(inner_playlist, selectmode=Tkinter.SINGLE, yscrollcommand=scroll.set, exportselection=0, width=16, height=20)
-        self._list_track = Listbox(inner_playlist, selectmode=Tkinter.SINGLE, yscrollcommand=scroll.set, exportselection=0, width=32, height=20)
-        self._list_artist = Listbox(inner_playlist, selectmode=Tkinter.SINGLE, yscrollcommand=scroll.set, exportselection=0, width=32, height=20)
+        scroll = Scrollbar(inner_playlist, orient=tkinter.VERTICAL, command=self._scroll_playlist)
+        self._list_time = Listbox(inner_playlist, selectmode=tkinter.SINGLE, yscrollcommand=scroll.set,
+                                  exportselection=0, width=16, height=20)
+        self._list_track = Listbox(inner_playlist, selectmode=tkinter.SINGLE, yscrollcommand=scroll.set,
+                                   exportselection=0, width=32, height=20)
+        self._list_artist = Listbox(inner_playlist, selectmode=tkinter.SINGLE, yscrollcommand=scroll.set,
+                                    exportselection=0, width=32, height=20)
 
-        scroll.pack(side=Tkinter.RIGHT, fill=Tkinter.Y)
-        self._list_time.pack(side=Tkinter.LEFT, fill=Tkinter.X, expand=True, padx=2, pady=2)
-        self._list_track.pack(side=Tkinter.LEFT, fill=Tkinter.X, expand=True, padx=2, pady=2)
-        self._list_artist.pack(side=Tkinter.LEFT, fill=Tkinter.X, expand=True, padx=2, pady=2)
+        scroll.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+        self._list_time.pack(side=tkinter.LEFT, fill=tkinter.X, expand=True, padx=2, pady=2)
+        self._list_track.pack(side=tkinter.LEFT, fill=tkinter.X, expand=True, padx=2, pady=2)
+        self._list_artist.pack(side=tkinter.LEFT, fill=tkinter.X, expand=True, padx=2, pady=2)
 
         inner_playlist.grid(row=1, column=0, columnspan=3)
         playlist.grid(row=4, column=0, columnspan=4)
@@ -111,15 +116,15 @@ class Automation(Frame):
         STATE_STOPPED -> STATE_PLAYING -> STATE_STOPPING -> STATE_STOPPED
         """
         if self._state is STATE_STOPPED:
-            print "Starting Automation..."
+            print("Starting Automation...")
             self._cart_queue.start()
             self._state = STATE_PLAYING
         elif self._state is STATE_PLAYING:
-            print "Stopping Automation after this track..."
+            print("Stopping Automation after this track...")
             self._cart_queue.stop_soft()
             self._state = STATE_STOPPING
         elif self._state is STATE_STOPPING:
-            print "Stopping Automation immediately."
+            print("Stopping Automation immediately.")
             self._cart_queue.transition()
             self._state = STATE_STOPPED
         self._update_ui()
@@ -132,7 +137,7 @@ class Automation(Frame):
     def _cart_stop(self):
         """Reset the meter when a cart stops.
 
-        Also, if a soft stop occured, update the button state.
+        Also, if a soft stop occurred, update the button state.
         """
         self._meter.reset()
 
@@ -145,14 +150,14 @@ class Automation(Frame):
         self._button_text.set(TEXT_BUTTON[self._state])
         self._button.config(bg=COLOR_BUTTON[self._state], highlightbackground=COLOR_BUTTON[self._state])
 
-        self._list_time.delete(0, Tkinter.END)
-        self._list_track.delete(0, Tkinter.END)
-        self._list_artist.delete(0, Tkinter.END)
+        self._list_time.delete(0, tkinter.END)
+        self._list_track.delete(0, tkinter.END)
+        self._list_artist.delete(0, tkinter.END)
 
         for cart in self._cart_queue.get_queue():
-            self._list_time.insert(Tkinter.END, cart.start_time.strftime("%I:%M:%S %p"))
-            self._list_track.insert(Tkinter.END, cart.title)
-            self._list_artist.insert(Tkinter.END, cart.issuer)
+            self._list_time.insert(tkinter.END, cart.start_time.strftime("%I:%M:%S %p"))
+            self._list_track.insert(tkinter.END, cart.title)
+            self._list_artist.insert(tkinter.END, cart.issuer)
 
     def _get_meter_data(self):
         """Get meter data for the first track in the queue."""
@@ -162,5 +167,6 @@ class Automation(Frame):
             return queue[0].get_meter_data()
         else:
             return None
+
 
 Automation()
