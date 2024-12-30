@@ -10,6 +10,7 @@ import mad
 
 AODEV = ao.AudioDevice(0)
 
+
 class Player(object):
     """The Player class provides an audio stream for a file."""
     _filename = None
@@ -48,7 +49,7 @@ class Player(object):
             if buf is not None:
                 AODEV.play(buf, len(buf))
             else:
-                print time.asctime() + " :=: Player_madao :: Buffer is empty"
+                print(time.asctime() + " :=: Player_madao :: Buffer is empty")
                 break
 
         if self._callback is not None and self._is_playing:
@@ -62,7 +63,7 @@ class Player(object):
         :param callback: function to call if the stream finishes
         """
         if self._is_playing:
-            print time.asctime() + " :=: Player_madao :: Tried to start, but already playing"
+            print(time.asctime() + " :=: Player_madao :: Tried to start, but already playing")
             return
 
         self._is_playing = True

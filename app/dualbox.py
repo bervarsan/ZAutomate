@@ -3,11 +3,12 @@
 ### fix dual highlight: http://www.internetcomputerforum.com/python-forum/311559-tkinter-selecting-one-item-each-two-listboxes.html
 
 """The dualbox module provides the DualBox class."""
-import Tkinter
-from Tkinter import Frame, Scrollbar, Label, Listbox
+import tkinter
+from tkinter import Frame, Scrollbar, Label, Listbox
 
 TEXT_LABEL1 = "Track"
 TEXT_LABEL2 = "Artist"
+
 
 class DualBox(Frame):
     """The DualBox class is a pair of Listboxes that has a list of carts."""
@@ -26,7 +27,7 @@ class DualBox(Frame):
         self._select_callback = parent.select_cart
 
         # make scroll bar
-        scroll_bar = Scrollbar(self, orient=Tkinter.VERTICAL, command=self._scroll_bar)
+        scroll_bar = Scrollbar(self, orient=tkinter.VERTICAL, command=self._scroll_bar)
 
         label1 = Label(self, text=TEXT_LABEL1)
         label2 = Label(self, text=TEXT_LABEL2)
@@ -36,12 +37,12 @@ class DualBox(Frame):
         self._list_box2 = Listbox(self, yscrollcommand=scroll_bar.set, exportselection=0, width=40)
 
         # fill the whole screen - pack!
-        scroll_bar.pack(side=Tkinter.RIGHT, fill=Tkinter.Y)
+        scroll_bar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
-        label1.pack(side=Tkinter.LEFT, fill=Tkinter.X, expand=True)
-        self._list_box1.pack(side=Tkinter.LEFT, fill=Tkinter.X, expand=True, padx=5, pady=5)
-        self._list_box2.pack(side=Tkinter.LEFT, fill=Tkinter.X, expand=True, padx=5, pady=5)
-        label2.pack(side=Tkinter.LEFT, fill=Tkinter.X, expand=True)
+        label1.pack(side=tkinter.LEFT, fill=tkinter.X, expand=True)
+        self._list_box1.pack(side=tkinter.LEFT, fill=tkinter.X, expand=True, padx=5, pady=5)
+        self._list_box2.pack(side=tkinter.LEFT, fill=tkinter.X, expand=True, padx=5, pady=5)
+        label2.pack(side=tkinter.LEFT, fill=tkinter.X, expand=True)
 
         # mouse wheel binding
         self._list_box1.bind("<MouseWheel>", self._scroll_wheel)
@@ -56,12 +57,12 @@ class DualBox(Frame):
 
         :param carts: array of carts
         """
-        self._list_box1.delete(0, Tkinter.END)
-        self._list_box2.delete(0, Tkinter.END)
+        self._list_box1.delete(0, tkinter.END)
+        self._list_box2.delete(0, tkinter.END)
 
         for cart in carts:
-            self._list_box1.insert(Tkinter.END, cart.title)
-            self._list_box2.insert(Tkinter.END, cart.issuer)
+            self._list_box1.insert(tkinter.END, cart.title)
+            self._list_box2.insert(tkinter.END, cart.issuer)
 
     def _get_selected_index(self):
         one = self._list_box1.curselection()
@@ -97,8 +98,8 @@ class DualBox(Frame):
         index = self._get_selected_index()
 
         if index is not None:
-            self._list_box1.selection_clear(0, Tkinter.END)
-            self._list_box2.selection_clear(0, Tkinter.END)
+            self._list_box1.selection_clear(0, tkinter.END)
+            self._list_box2.selection_clear(0, tkinter.END)
             self._list_box1.selection_set(index, index)
             self._list_box2.selection_set(index, index)
 

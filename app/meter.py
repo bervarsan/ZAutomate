@@ -1,8 +1,8 @@
 """The meter module provides the Meter class."""
 import multiprocessing as mp
 import time
-import Tkinter
-from Tkinter import Canvas
+import tkinter
+from tkinter import Canvas
 
 METER_HEIGHT = 135
 METER_INTERVAL = 0.50
@@ -20,12 +20,14 @@ TEXT_POSITION = "Position"
 TEXT_LENGTH = "Length"
 TEXT_CUE = "To Cue"
 
+
 def get_fmt_time(seconds):
     """Get a formatted time string from a number of seconds.
 
     :param seconds
     """
     return time.strftime("%M:%S", time.localtime(seconds))
+
 
 class Meter(Canvas):
     """The Meter class is a UI element that shows the elapsed time of a track."""
@@ -46,25 +48,26 @@ class Meter(Canvas):
         :param data_callback: function to retrieve meter data
         :param end_callback: function to call upon completion
         """
-        Canvas.__init__(self, master, bg=COLOR_METER_BG, borderwidth=2, relief=Tkinter.GROOVE, width=width, height=METER_HEIGHT)
+        Canvas.__init__(self, master, bg=COLOR_METER_BG, borderwidth=2, relief=tkinter.GROOVE, width=width,
+                        height=METER_HEIGHT)
 
         self._data_callback = data_callback
 
-        self._width = (int)(self.cget("width"))
+        self._width = int(self.cget("width"))
         self._x0 = 0
         self._y0 = METER_HEIGHT - 25
         self._x1 = self._width + 5
         self._y1 = METER_HEIGHT
 
-        self.create_text(10, 60, anchor=Tkinter.W, font=FONT_SMALL, text=TEXT_POSITION, fill=COLOR_METER_TEXT)
-        self.create_text(140, 60, anchor=Tkinter.W, font=FONT_SMALL, text=TEXT_LENGTH, fill=COLOR_METER_TEXT)
-        self.create_text(270, 60, anchor=Tkinter.W, font=FONT_SMALL, text=TEXT_CUE, fill=COLOR_METER_TEXT)
+        self.create_text(10, 60, anchor=tkinter.W, font=FONT_SMALL, text=TEXT_POSITION, fill=COLOR_METER_TEXT)
+        self.create_text(140, 60, anchor=tkinter.W, font=FONT_SMALL, text=TEXT_LENGTH, fill=COLOR_METER_TEXT)
+        self.create_text(270, 60, anchor=tkinter.W, font=FONT_SMALL, text=TEXT_CUE, fill=COLOR_METER_TEXT)
 
-        self._position = self.create_text(10, 85, anchor=Tkinter.W, font=FONT_NUM, fill=COLOR_METER_TEXT)
-        self._length = self.create_text(140, 85, anchor=Tkinter.W, font=FONT_NUM, fill=COLOR_METER_TEXT)
-        self._cue = self.create_text(270, 85, anchor=Tkinter.W, font=FONT_NUM, fill=COLOR_METER_TEXT)
-        self._title = self.create_text(10, 20, anchor=Tkinter.W, font=FONT_HEAD, fill=COLOR_METER_TEXT)
-        self._artist = self.create_text(self._width, 20, anchor=Tkinter.E, font=FONT_HEAD, fill=COLOR_METER_TEXT)
+        self._position = self.create_text(10, 85, anchor=tkinter.W, font=FONT_NUM, fill=COLOR_METER_TEXT)
+        self._length = self.create_text(140, 85, anchor=tkinter.W, font=FONT_NUM, fill=COLOR_METER_TEXT)
+        self._cue = self.create_text(270, 85, anchor=tkinter.W, font=FONT_NUM, fill=COLOR_METER_TEXT)
+        self._title = self.create_text(10, 20, anchor=tkinter.W, font=FONT_HEAD, fill=COLOR_METER_TEXT)
+        self._artist = self.create_text(self._width, 20, anchor=tkinter.E, font=FONT_HEAD, fill=COLOR_METER_TEXT)
 
         self._bar_bg = self.create_rectangle(self._x0, self._y0, self._x1, self._y1, fill=COLOR_BAR_BG)
         self._bar_fg = self.create_rectangle(self._x0, self._y0, self._x0, self._y1, fill=COLOR_BAR_FG)
@@ -82,12 +85,12 @@ class Meter(Canvas):
                 break
 
             if data[1] is not 0:
-                value = (float)(data[0]) / (float)(data[1])
+                value = float(data[0]) / float(data[1])
             else:
                 value = 0.0
 
-            position = (int)(data[0]) / 1000
-            length = (int)(data[1]) / 1000
+            position = int(data[0]) / 1000
+            length = int(data[1]) / 1000
             cue = length - position
             title = data[2]
             artist = data[3]

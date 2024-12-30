@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 """The Studio module provides a GUI for the digital library."""
-import multiprocessing as mp
-import Tkinter
-from Tkinter import Frame, Label, BooleanVar, Checkbutton, Entry, Button
+import thread
+import tkinter
+from tkinter import Frame, Label, BooleanVar, Checkbutton, Entry, Button
 import database
 from dualbox import DualBox
 from cartgrid import Grid
@@ -21,6 +21,7 @@ TEXT_AUTOSLOT = "Auto-queue tracks"
 TEXT_SEARCHBOX = "Search Box"
 TEXT_SEARCH = "Search"
 
+
 def get_next_key(rows, cols, key):
     """Get the next cell to queue after a cell.
 
@@ -32,8 +33,8 @@ def get_next_key(rows, cols, key):
     :param cols
     :param key
     """
-    next_row = (int)(key[0])
-    next_col = (int)(key[2])
+    next_row = int(key[0])
+    next_col = int(key[2])
 
     if next_row is rows:
         if next_col is cols:
@@ -45,7 +46,8 @@ def get_next_key(rows, cols, key):
     else:
         next_row += 1
 
-    return (str)(next_row) + "x" + (str)(next_col)
+    return str(next_row) + "x" + str(next_col)
+
 
 class Studio(Frame):
     """The Studio class is a GUI for the digital library."""
@@ -79,32 +81,34 @@ class Studio(Frame):
         self._meter.grid(row=1, column=0, columnspan=GRID_COLS)
 
         # initialize the cart grid
-        self._grid = Grid(self, GRID_ROWS, GRID_COLS, True, self._cart_start, self._cart_stop, self._cart_end, self.add_cart)
+        self._grid = Grid(self, GRID_ROWS, GRID_COLS, True, self._cart_start, self._cart_stop, self._cart_end,
+                          self.add_cart)
 
         # initialize the dual box
         self._dual_box = DualBox(self)
         self._dual_box.grid(row=GRID_ROWS + 2, column=0, columnspan=4)
 
-        # intialize the auto-queue control
+        # initialize the auto-queue control
         self._auto_queue = BooleanVar()
         self._auto_queue.set(False)
 
-        control = Frame(self.master, bd=2, relief=Tkinter.SUNKEN)
+        control = Frame(self.master, bd=2, relief=tkinter.SUNKEN)
 
-        Checkbutton(control, text=TEXT_AUTOSLOT, variable=self._auto_queue, onvalue=True, offvalue=False).pack(anchor=Tkinter.NW)
+        Checkbutton(control, text=TEXT_AUTOSLOT, variable=self._auto_queue, onvalue=True, offvalue=False).pack(
+            anchor=tkinter.NW)
         control.grid(row=GRID_ROWS + 2, column=4, columnspan=GRID_COLS - 4)
 
         # initialize the search box, button
-        Label(control, font=FONT, text=TEXT_SEARCHBOX).pack(anchor=Tkinter.NW)
+        Label(control, font=FONT, text=TEXT_SEARCHBOX).pack(anchor=tkinter.NW)
         self._entry = Entry(control, takefocus=True, width=45)
         self._entry.bind("<Return>", self.search)
         # self._entry.grid(row=GRID_ROWS + 3, column=0, columnspan=5)
-        self._entry.pack(anchor=Tkinter.NW)
+        self._entry.pack(anchor=tkinter.NW)
         self._entry.focus_set()
 
         button = Button(control, text=TEXT_SEARCH, command=self.search)
         # button.grid(row=GRID_ROWS + 3, column=5)
-        button.pack(anchor=Tkinter.S)
+        button.pack(anchor=tkinter.S)
 
         # begin the event loop
         self.master.protocol("WM_DELETE_WINDOW", self.master.destroy)
@@ -116,16 +120,19 @@ class Studio(Frame):
         query = self._entry.get()
 
         if len(query) >= 3:
-            print "Searching library with query \"%s\"..." % query
+            print("Searching library with query \"%s\"..." % query)
 
             self._search_results = database.search_library(query)
             self._dual_box.fill(self._search_results)
 
-            print "Found %d results." % len(self._search_results)
+            print("Found %d results." % len(self._search_results))
 
     def search(self, *args):
-        """Search the digital library."""
-        mp.Process(target=self._search_internal).start()
+        """Search the digital library.
+
+        :param args
+        """
+        thread.start_new_thread(self._search_internal, ())
 
     def select_cart(self, index):
         """Select a cart from the search results.
@@ -168,5 +175,6 @@ class Studio(Frame):
     def _get_meter_data(self):
         """Get meter data for the currently active cart."""
         return self._grid.get_active_cell().get_cart().get_meter_data()
+
 
 Studio()

@@ -12,6 +12,7 @@ import time
 
 import mad
 
+
 class Player(object):
     """The Player class provides an audio stream for a file."""
     _command = None
@@ -62,7 +63,7 @@ class Player(object):
         :param callback: function to call if the stream finishes
         """
         if self._is_playing:
-            print time.asctime() + " :=: Player_vlc :: Tried to start, but already playing"
+            print(time.asctime() + " :=: Player_vlc :: Tried to start, but already playing")
             return
 
         self._pid = subprocess.Popen(self._command).pid
@@ -73,7 +74,7 @@ class Player(object):
     def stop(self):
         """Stop the audio stream."""
         if not self._is_playing:
-            print time.asctime() + " :=: Player_vlc :: Tried to stop, but not playing"
+            print(time.asctime() + " :=: Player_vlc :: Tried to stop, but not playing")
             return
 
         self._is_playing = False
