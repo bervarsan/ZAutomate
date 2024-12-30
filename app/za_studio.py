@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """The Studio module provides a GUI for the digital library."""
-import thread
+import threading
 import tkinter
 from tkinter import Frame, Label, BooleanVar, Checkbutton, Entry, Button
 import database
@@ -132,7 +132,8 @@ class Studio(Frame):
 
         :param args
         """
-        thread.start_new_thread(self._search_internal, ())
+        thread = threading.Thread(target=self._search_internal, daemon=True)
+        thread.start()
 
     def select_cart(self, index):
         """Select a cart from the search results.

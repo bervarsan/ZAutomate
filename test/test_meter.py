@@ -3,7 +3,7 @@
 """Test suite for the meter module."""
 import sys
 import time
-import thread
+import threading
 from tkinter import Frame, Canvas
 
 sys.path.insert(0, 'app')
@@ -34,7 +34,8 @@ class Test(Frame):
         Canvas(self.master, width=900, height=100, bg='#00F').grid(row=2, column=0, columnspan=NUM_COLS)
 
         self._meter.start()
-        thread.start_new_thread(self._run, ())
+        thread = threading.Thread(target=self._run, daemon=True)  # Set daemon=True
+        thread.start()
 
         self.master.title("Testing Program")
         self.master.mainloop()
