@@ -7,7 +7,7 @@ seems to work, although it prints cryptic messages from time to time.
 import os
 import signal
 import subprocess
-import thread
+import threading
 import time
 
 import mad
@@ -69,7 +69,8 @@ class Player(object):
         self._pid = subprocess.Popen(self._command).pid
         self._is_playing = True
         self._callback = callback
-        thread.start_new_thread(self._play_internal, ())
+        thread = threading.Thread(target=self._play_internal, daemon=True)  # Set daemon=True
+        thread.start()
 
     def stop(self):
         """Stop the audio stream."""
