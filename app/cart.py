@@ -11,6 +11,7 @@ import time
 from player_vlc import VLCPlayer
 
 
+
 class Cart(object):
     """The Cart class contains the metadata and audio stream of a cart."""
     cart_id = None
