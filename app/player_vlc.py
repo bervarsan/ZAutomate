@@ -1,19 +1,14 @@
-"""The player_vlc module provides the Player class.
-
-This implementation of Player uses VLC in a separate process, although
-it also uses libmad to retreive the length of the file. This implementation
-seems to work, although it prints cryptic messages from time to time.
-"""
 import os
 import signal
 import subprocess
 import threading
 import time
+from player import Player
+from mutagen.mp3 import MP3
 
-import mad
 
 
-class Player(object):
+class VLCPlayer(Player):
     """The Player class provides an audio stream for a file."""
     _command = None
     _pid = None
@@ -27,35 +22,51 @@ class Player(object):
 
         :param filename
         """
+        super().__init__(filename)
         self._command = ["/usr/bin/vlc", "--intf", "dummy", "--play-and-exit", filename]
-        self._length = mad.MadFile(filename).total_time()
+        self._length = MP3(filename).info.length * 1000
+        self._elapsed = 0
+        self._pid = None
+        self._lock = threading.Lock()
 
+    @property
     def length(self):
         """Get the length of the audio stream in milliseconds."""
-        return self._length
+        with self._lock:
+            return self._length
 
+    @property
     def time_elapsed(self):
         """Get the elapsed time of the audio stream in milliseconds."""
-        return self._elapsed
-
-    def is_playing(self):
-        """Get whether the audio stream is currently playing."""
-        return self._is_playing
+        with self._lock:
+            return self._elapsed
 
     def _play_internal(self):
-        """Play the audio stream in a separate thread."""
-        while self._is_playing:
+        """Internal method to simulate playback and track elapsed time."""
+        while True:
+            with self._lock:
+                if not self._is_playing:
+                    break
+                self._elapsed += 1000
+
             time.sleep(1.0)
-            self._elapsed += 1000
-            if self._elapsed >= self._length:
-                break
 
-        if not self._is_playing:
-            os.kill(self._pid, signal.SIGKILL)
+            with self._lock:
+                if self._elapsed >= self._length:
+                    break
 
-        if self._callback is not None and self._is_playing:
+        with self._lock:
+            if self._pid:
+                os.kill(self._pid, signal.SIGKILL)
+                self._pid = None
+
+            if self._callback is not None and self._elapsed >= self._length:
+                callback = self._callback
+                self._callback = None
+                callback()
+
             self._is_playing = False
-            self._callback()
+            self._elapsed = 0
 
     def play(self, callback=None):
         """Play the audio stream.
@@ -63,20 +74,33 @@ class Player(object):
         :param callback: function to call if the stream finishes
         """
         if self._is_playing:
-            print(time.asctime() + " :=: Player_vlc :: Tried to start, but already playing")
+            print(time.asctime() + " :=: " + self.__class__.__name__ + " :: Tried to start, but already playing")
             return
 
-        self._pid = subprocess.Popen(self._command).pid
-        self._is_playing = True
-        self._callback = callback
+        with self._lock:
+            if self._is_playing:
+                raise RuntimeError("Audio is already playing")
+
+            self._pid = subprocess.Popen(self._command).pid
+            self._is_playing = True
+            self._callback = callback
+
         thread = threading.Thread(target=self._play_internal, daemon=True)  # Set daemon=True
         thread.start()
 
     def stop(self):
         """Stop the audio stream."""
-        if not self._is_playing:
-            print(time.asctime() + " :=: Player_vlc :: Tried to stop, but not playing")
-            return
+        with self._lock:
+            if not self._is_playing:
+                print(time.asctime() + " :=: Player_vlc :: Tried to stop, but not playing")
+                return
 
-        self._is_playing = False
-        self._callback = None
+            self._is_playing = False
+            self._callback = None
+
+        if self._pid:
+            os.kill(self._pid, signal.SIGKILL)
+            self._pid = None
+
+        with self._lock:
+            self._elapsed = 0
