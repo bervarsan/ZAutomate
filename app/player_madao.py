@@ -7,36 +7,32 @@ import threading
 import time
 import ao
 import mad
+from player import Player
 
 AODEV = ao.AudioDevice(0)
 
 
-class Player(object):
+class MadaoPlayer(Player):
     """The Player class provides an audio stream for a file."""
-    _filename = None
-    _madfile = None
-    _is_playing = False  # may need a lock since stop and play_internal both write
-    _callback = None
 
     def __init__(self, filename):
         """Construct a Player.
 
         :param filename
         """
-        self._filename = filename
+        super().__init__(filename)
+        self._madfile = None
         self.reset()
 
+    @property
     def length(self):
         """Get the length of the audio stream in milliseconds."""
         return self._madfile.total_time()
 
+    @property
     def time_elapsed(self):
         """Get the elapsed time of the audio stream in milliseconds."""
         return self._madfile.current_time()
-
-    def is_playing(self):
-        """Get whether the audio stream is currently playing."""
-        return self._is_playing
 
     def reset(self):
         """Reset the audio stream."""
