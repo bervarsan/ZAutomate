@@ -7,38 +7,35 @@ tkSnack module does not seem to load correctly.
 import time
 from tkinter import Tk
 import tkSnack
+from player import Player
 
 # TODO: provide reference to Tk root
 root = Tk()
 tkSnack.initializeSnack(root)
 
 
-class Player(object):
+class PlayerSnack(Player):
     """The Player class provides an audio stream for a file."""
-    _filename = None
-    _snack = None
-    _is_playing = False
-    _callback = None
 
     def __init__(self, filename):
-        """Construct a Player.
+        """
+        construct a tkSnack Player.
 
         :param filename
         """
-        self._filename = filename
+        super().__init__(filename)
+        self._snack = None
         self.reset()
 
+    @property
     def length(self):
         """Get the length of the audio stream in milliseconds."""
         return self._snack.length(unit="SECONDS") * 1000
 
+    @property
     def time_elapsed(self):
         """Get the elapsed time of the audio stream in milliseconds."""
         return tkSnack.audio.elapsedTime() * 1000
-
-    def is_playing(self):
-        """Get whether the audio stream is currently playing."""
-        return self._is_playing
 
     def reset(self):
         """Reset the audio stream."""
@@ -49,8 +46,8 @@ class Player(object):
 
         :param callback: function to call if the stream finishes
         """
-        if self._is_playing:
-            print(time.asctime() + " :=: Player_snack :: Tried to start, but already playing")
+        if self.is_playing:
+            print(time.asctime() + " :=: " + self.__class__.__name__ + " :: Tried to start, but already playing")
             return
 
         self._is_playing = True
@@ -59,8 +56,8 @@ class Player(object):
 
     def stop(self):
         """Stop the audio stream."""
-        if not self._is_playing:
-            print(time.asctime() + " :=: Player_snack :: Tried to stop, but not playing")
+        if not self.is_playing:
+            print(time.asctime() + " :=: " + self.__class__.__name__ + " :: Tried to stop, but not playing")
             return
 
         self._is_playing = False
