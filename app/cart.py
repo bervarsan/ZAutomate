@@ -5,10 +5,10 @@ class, but it may be better to have separate classes.
 
 The Cart class uses the Player class to provide an audio stream. There
 are three different implementations of the Player class, and Cart currently
-uses madao.
+uses VLC.
 """
 import time
-from player_madao import Player
+from player_vlc import VLCPlayer
 
 
 class Cart(object):
@@ -40,7 +40,7 @@ class Cart(object):
         # filename = "test/test.mp3"
 
         try:
-            self._player = Player(filename)
+            self._player = VLCPlayer(filename)
         except IOError:
             print(time.asctime() + " :=: Cart :: could not load audio file " + filename)
 
