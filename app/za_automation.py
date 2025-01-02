@@ -161,10 +161,8 @@ class Automation(Frame):
 
     def _get_meter_data(self):
         """Get meter data for the first track in the queue."""
-        queue = self._cart_queue.get_queue()
-
-        if len(queue) > 0:
-            return queue[0].get_meter_data()
+        if self._cart_queue.front:
+            return self._cart_queue.front.get_meter_data()
         else:
             return None
 

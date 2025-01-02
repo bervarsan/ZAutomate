@@ -77,30 +77,24 @@ class Meter(Canvas):
     def _run(self):
         """Run the meter in a separate thread."""
         while self._is_playing:
-            data = self._data_callback()
-            if data is None:
-                data = (0, 0, "--", "--")
+            data = self._data_callback() or (0, 0, "--", "--")
+            position, length, title, artist = data
 
-            if data[0] >= data[1]:
+            if position >= length:
                 break
 
-            if data[1] is not 0:
-                value = float(data[0]) / float(data[1])
-            else:
-                value = 0.0
+            percentage_elapsed = float(position) / float(length) if length != 0 else 0.0
 
-            position = int(data[0]) / 1000
-            length = int(data[1]) / 1000
+            position = position // 1000
+            length = length // 1000
             cue = length - position
-            title = data[2]
-            artist = data[3]
 
             self.itemconfigure(self._position, text=get_fmt_time(position))
             self.itemconfigure(self._length, text=get_fmt_time(length))
             self.itemconfigure(self._cue, text=get_fmt_time(cue))
             self.itemconfigure(self._title, text=title)
             self.itemconfigure(self._artist, text=artist)
-            self.coords(self._bar_fg, self._x0, self._y0, int(self._width * value), self._y1)
+            self.coords(self._bar_fg, self._x0, self._y0, int(self._width * percentage_elapsed), self._y1)
 
             time.sleep(METER_INTERVAL)
 

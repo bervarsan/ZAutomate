@@ -30,9 +30,9 @@ class Cart(object):
         :param filename: location of the cart file
         """
         self.cart_id = cart_id
-        self.title = title.encode("ascii", "ignore")
-        self.issuer = issuer.encode("ascii", "ignore")
-        self.cart_type = cart_type.encode("ascii", "ignore")
+        self.title = title
+        self.issuer = issuer
+        self.cart_type = cart_type
 
         filename = filename.encode("ascii", "ignore")
 
@@ -40,7 +40,7 @@ class Cart(object):
         # filename = "test/test.mp3"
 
         try:
-            self._player = VLCPlayer(filename)
+            self._player = VLCPlayer(str(filename))
         except IOError:
             print(time.asctime() + " :=: Cart :: could not load audio file " + filename)
 
@@ -50,7 +50,7 @@ class Cart(object):
 
     def is_playing(self):
         """Get whether the cart is currently playing."""
-        return self._player.is_playing()
+        return self._player.is_playing
 
     def start(self, callback=None):
         """Play the cart's audio stream.
@@ -67,4 +67,4 @@ class Cart(object):
 
     def get_meter_data(self):
         """Get the meter data for the cart as a 4-tuple."""
-        return (self._player.time_elapsed(), self._player.length(), self.title, self.issuer)
+        return self._player.time_elapsed, self._player.length, self.title, self.issuer

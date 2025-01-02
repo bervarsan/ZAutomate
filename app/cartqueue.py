@@ -100,6 +100,15 @@ class CartQueue(object):
         """Get the queue."""
         return self._queue
 
+    @property
+    def front(self):
+        """
+        Get the front of the queue
+
+        :return Cart: top of cart or None
+        """
+        return self._queue[0] if self._queue else None
+
     def _enqueue(self):
         """Start the first track in the queue."""
         print(time.asctime() + " :=: CartQueue :: Enqueuing " + self._queue[0].cart_id)
