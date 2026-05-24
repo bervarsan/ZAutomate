@@ -1,3 +1,5 @@
 *.pyc
 *.log
 *.mp3
+.idea/
+.venv/
