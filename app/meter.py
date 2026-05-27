@@ -1,5 +1,4 @@
 """The meter module provides the Meter class."""
-import multiprocessing as mp
 import time
 import Tkinter
 from Tkinter import Canvas
@@ -72,39 +71,45 @@ class Meter(Canvas):
         self.reset()
 
     def _run(self):
-        """Run the meter in a separate thread."""
-        while self._is_playing:
-            data = self._data_callback()
-            if data is None:
-                data = (0, 0, "--", "--")
+        """Update the meter from the Tk main loop."""
+        if not self._is_playing:
+            return
 
-            if data[0] >= data[1]:
-                break
+        data = self._data_callback()
+        if data is None:
+            data = (0, 0, "--", "--")
 
-            if data[1] is not 0:
-                value = (float)(data[0]) / (float)(data[1])
-            else:
-                value = 0.0
+        if data[0] >= data[1]:
+            self._is_playing = False
+            return
 
-            position = (int)(data[0]) / 1000
-            length = (int)(data[1]) / 1000
-            cue = length - position
-            title = data[2]
-            artist = data[3]
+        if data[1] is not 0:
+            value = (float)(data[0]) / (float)(data[1])
+        else:
+            value = 0.0
 
-            self.itemconfigure(self._position, text=get_fmt_time(position))
-            self.itemconfigure(self._length, text=get_fmt_time(length))
-            self.itemconfigure(self._cue, text=get_fmt_time(cue))
-            self.itemconfigure(self._title, text=title)
-            self.itemconfigure(self._artist, text=artist)
-            self.coords(self._bar_fg, self._x0, self._y0, int(self._width * value), self._y1)
+        position = (int)(data[0]) / 1000
+        length = (int)(data[1]) / 1000
+        cue = length - position
+        title = data[2]
+        artist = data[3]
 
-            time.sleep(METER_INTERVAL)
+        self.itemconfigure(self._position, text=get_fmt_time(position))
+        self.itemconfigure(self._length, text=get_fmt_time(length))
+        self.itemconfigure(self._cue, text=get_fmt_time(cue))
+        self.itemconfigure(self._title, text=title)
+        self.itemconfigure(self._artist, text=artist)
+        self.coords(self._bar_fg, self._x0, self._y0, int(self._width * value), self._y1)
+
+        self.after(int(METER_INTERVAL * 1000), self._run)
 
     def start(self):
         """Start the meter."""
+        if self._is_playing:
+            return
+
         self._is_playing = True
-        mp.Process(target=self._run).start()
+        self._run()
 
     def reset(self):
         """Reset the meter."""
