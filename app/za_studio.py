@@ -7,6 +7,7 @@ from Tkinter import Frame, Label, BooleanVar, Checkbutton, Entry, Button
 import database
 from dualbox import DualBox
 from cartgrid import Grid
+from grid_math import get_next_key
 from meter import Meter
 
 METER_WIDTH = 1000
@@ -20,32 +21,6 @@ TEXT_TITLE = "ZAutomate :: DJ Studio"
 TEXT_AUTOSLOT = "Auto-queue tracks"
 TEXT_SEARCHBOX = "Search Box"
 TEXT_SEARCH = "Search"
-
-def get_next_key(rows, cols, key):
-    """Get the next cell to queue after a cell.
-
-    - each cell queues the cell below
-    - bottom cells queue the top cell in the next column
-    - the bottom right cell queues the top left cell
-
-    :param rows
-    :param cols
-    :param key
-    """
-    next_row = (int)(key[0])
-    next_col = (int)(key[2])
-
-    if next_row is rows:
-        if next_col is cols:
-            next_row = 1
-            next_col = 1
-        else:
-            next_row = 1
-            next_col += 1
-    else:
-        next_row += 1
-
-    return (str)(next_row) + "x" + (str)(next_col)
 
 class Studio(Frame):
     """The Studio class is a GUI for the digital library."""
