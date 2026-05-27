@@ -1,6 +1,6 @@
 """The database module provides a collection of functions for the server API."""
 import time
-import requests
+from api_client import ApiClient, ApiError
 from cart import Cart
 
 LIBRARY_PREFIX = "/media/Jemaine/"
@@ -13,15 +13,16 @@ URL_STUDIOSEARCH = "https://wsbf.net/api/zautomate/studio_search.php"
 URL_LOG_CART = "https://wsbf.net/api/zautomate/log_cart.php"
 URL_LOG_TRACK = "https://wsbf.net/api/zautomate/log_track.php"
 
+CLIENT = ApiClient()
+
 def get_new_show_id(show_id):
     """Get a new show ID for queueing playlists.
 
     :param show_id: previous show ID, which will be excluded
     """
     try:
-        res = requests.get(URL_AUTOSTART, params={"showid": show_id})
-        return res.json()
-    except requests.exceptions.ConnectionError:
+        return CLIENT.get_json(URL_AUTOSTART, params={"showid": show_id})
+    except ApiError:
         print "Error: Could not fetch starting show ID."
         return -1
 
@@ -47,8 +48,7 @@ def get_cart(cart_type):
         count = 0
         while count < 5:
             # fetch a random cart
-            res = requests.get(URL_AUTOCART, params={"type": cart_type})
-            cart_res = res.json()
+            cart_res = CLIENT.get_json(URL_AUTOCART, params={"type": cart_type})
 
             # return if cart type is empty
             if cart_res is None:
@@ -63,7 +63,7 @@ def get_cart(cart_type):
                 return cart
             else:
                 count += 1
-    except requests.exceptions.ConnectionError:
+    except ApiError:
         print time.asctime() + " :=: Error: Could not fetch cart."
 
     return None
@@ -76,8 +76,7 @@ def get_playlist(show_id):
     playlist = []
 
     try:
-        res = requests.get(URL_AUTOLOAD, params={"showid": show_id})
-        playlist_res = res.json()
+        playlist_res = CLIENT.get_json(URL_AUTOLOAD, params={"showid": show_id})
 
         for track_res in playlist_res:
             # TODO: move pathname building to Track constructor
@@ -88,7 +87,7 @@ def get_playlist(show_id):
 
             if track.is_playable():
                 playlist.append(track)
-    except requests.exceptions.ConnectionError:
+    except ApiError:
         print "Error: Could not fetch playlist."
 
     return playlist
@@ -104,8 +103,7 @@ def get_carts():
 
     try:
         for cart_type in carts:
-            res = requests.get(URL_CARTLOAD, params={"type": cart_type})
-            carts_res = res.json()
+            carts_res = CLIENT.get_json(URL_CARTLOAD, params={"type": cart_type})
 
             for cart_res in carts_res:
                 # TODO: move pathname building to Cart constructor
@@ -116,7 +114,7 @@ def get_carts():
                 if cart.is_playable():
                     carts[cart_type].append(cart)
 
-    except requests.exceptions.ConnectionError:
+    except ApiError:
         print time.asctime() + " :=: Error: Could not fetch carts."
 
     return carts
@@ -129,8 +127,7 @@ def search_library(query):
     results = []
 
     try:
-        res = requests.get(URL_STUDIOSEARCH, params={"query": query})
-        results_res = res.json()
+        results_res = CLIENT.get_json(URL_STUDIOSEARCH, params={"query": query})
 
         for cart_res in results_res["carts"]:
             filename = LIBRARY_PREFIX + "carts/" + cart_res["filename"]
@@ -146,7 +143,7 @@ def search_library(query):
             track = Cart(track_id, track_res["track_name"], track_res["artist_name"], track_res["rotation"], filename)
             if track.is_playable():
                 results.append(track)
-    except requests.exceptions.ConnectionError:
+    except ApiError:
         print "Error: Could not fetch search results."
 
     return results
@@ -158,12 +155,12 @@ def log_cart(cart_id):
     """
     try:
         if cart_id.isdigit():
-            res = requests.post(URL_LOG_CART, params={"cartid": cart_id})
+            text = CLIENT.post_text(URL_LOG_CART, params={"cartid": cart_id})
         else:
             album_id = cart_id.split("-")[0]
             disc_num = 1
             track_num = cart_id.split("-")[1]
-            res = requests.post(URL_LOG_TRACK, params={"albumID": album_id, "disc_num": disc_num, "track_num": track_num})
-        print res.text
-    except requests.exceptions.ConnectionError:
+            text = CLIENT.post_text(URL_LOG_TRACK, params={"albumID": album_id, "disc_num": disc_num, "track_num": track_num})
+        print text
+    except ApiError:
         print time.asctime() + " :=: Caught error: Could not access cart logger."
