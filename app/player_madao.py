@@ -45,11 +45,11 @@ class Player(object):
         """Play the audio stream in a separate thread."""
         while self._is_playing:
             buf = self._madfile.read()
-            if buf is not None:
-                AODEV.play(buf, len(buf))
-            else:
+            if buf is None:
                 print time.asctime() + " :=: Player_madao :: Buffer is empty"
                 break
+
+            AODEV.play(buffer(buf), len(buf))
 
         if self._callback is not None and self._is_playing:
             self.reset()
