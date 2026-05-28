@@ -7,6 +7,7 @@ from cartqueue import CartQueue
 from meter import Meter
 
 METER_WIDTH = 800
+QUEUE_MONITOR_INTERVAL = 100
 
 STATE_STOPPED = 0
 STATE_PLAYING = 1
@@ -39,6 +40,7 @@ class Automation(Frame):
 
     _meter = None
     _cart_queue = None
+    _queue_monitoring = False
 
     _list_time = None
     _list_track = None
@@ -86,7 +88,7 @@ class Automation(Frame):
         playlist.grid(row=4, column=0, columnspan=4)
 
         # initialize cart queue
-        self._cart_queue = CartQueue(self._cart_start, self._cart_stop)
+        self._cart_queue = CartQueue(self._cart_start, self._cart_stop, self._update_ui)
         self._cart_queue.add_tracks()
         self._update_ui()
 
@@ -129,6 +131,10 @@ class Automation(Frame):
         self._meter.start()
         self._update_ui()
 
+        if not self._queue_monitoring:
+            self._queue_monitoring = True
+            self.after(QUEUE_MONITOR_INTERVAL, self._monitor_cart_queue)
+
     def _cart_stop(self):
         """Reset the meter when a cart stops.
 
@@ -139,6 +145,23 @@ class Automation(Frame):
         if self._state is STATE_STOPPING:
             self._state = STATE_STOPPED
             self._update_ui()
+
+    def _monitor_cart_queue(self):
+        """Poll playback completion from the Tk main loop."""
+        queue = self._cart_queue.get_queue()
+
+        if len(queue) is 0:
+            self._queue_monitoring = False
+            return
+
+        if not queue[0].is_playing():
+            self._cart_queue.transition()
+            self._update_ui()
+
+        if self._state is STATE_PLAYING or self._state is STATE_STOPPING:
+            self.after(QUEUE_MONITOR_INTERVAL, self._monitor_cart_queue)
+        else:
+            self._queue_monitoring = False
 
     def _update_ui(self):
         """Update the button and playlist."""

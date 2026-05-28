@@ -80,15 +80,18 @@ class CartQueue(object):
     _is_playing = False
     _on_cart_start = None
     _on_cart_stop = None
+    _on_queue_change = None
 
-    def __init__(self, on_cart_start, on_cart_stop):
+    def __init__(self, on_cart_start, on_cart_stop, on_queue_change=None):
         """Construct a cart queue.
 
         :param on_cart_start: callback for when a cart starts
         :param on_cart_stop: callback for when a cart stops
+        :param on_queue_change: callback for when queue contents change
         """
         self._on_cart_start = on_cart_start
         self._on_cart_stop = on_cart_stop
+        self._on_queue_change = on_queue_change
 
         self._show_id = database.get_new_show_id(-1)
         self._queue = []
@@ -102,7 +105,7 @@ class CartQueue(object):
         """Start the first track in the queue."""
         print time.asctime() + " :=: CartQueue :: Enqueuing " + self._queue[0].cart_id
 
-        self._queue[0].start(self.transition)
+        self._queue[0].start()
         self._on_cart_start()
 
         database.log_cart(self._queue[0].cart_id)
@@ -114,6 +117,9 @@ class CartQueue(object):
         self._queue[0].stop()
         self._on_cart_stop()
         self._played.append(self._queue.pop(0))
+
+        if self._on_queue_change is not None:
+            self._on_queue_change()
 
     def _gen_start_times(self, begin_index=0):
         """Set the start time of each item in the queue.
@@ -282,3 +288,6 @@ class CartQueue(object):
             # remove all carts if the queue was stopped
             print time.asctime() + " :=: CartQueue :: Removing all carts"
             self._remove_carts()
+
+            if self._on_queue_change is not None:
+                self._on_queue_change()
