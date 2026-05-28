@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """The Automation module provides a GUI for radio automation."""
+import sys
 import Tkinter
 from Tkinter import Label, StringVar, Button, Frame, Scrollbar, Listbox
 from cartqueue import CartQueue
@@ -46,8 +47,11 @@ class Automation(Frame):
     _list_track = None
     _list_artist = None
 
-    def __init__(self):
-        """Construct an Automation window."""
+    def __init__(self, auto_start=False):
+        """Construct an Automation window.
+
+        :param auto_start: begin playback once the UI is ready
+        """
         Frame.__init__(self)
 
         # initialize title
@@ -95,6 +99,10 @@ class Automation(Frame):
         # begin the event loop
         self.master.protocol("WM_DELETE_WINDOW", self.master.destroy)
         self.master.title(TEXT_TITLE)
+
+        if auto_start:
+            self.after(0, self._update_state)
+
         self.master.mainloop()
 
     def _scroll_playlist(self, *args):
@@ -186,4 +194,6 @@ class Automation(Frame):
         else:
             return None
 
-Automation()
+if __name__ == "__main__":
+    _auto_start = "--start" in sys.argv
+    Automation(auto_start=_auto_start)
