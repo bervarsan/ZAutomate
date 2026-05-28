@@ -7,8 +7,44 @@ import multiprocessing as mp
 import time
 import ao
 import mad
+from config import madao_config
 
-AODEV = ao.AudioDevice(0)
+AO_DRIVER = madao_config.ao_driver
+AO_BITS = madao_config.ao_bits
+AO_CHANNELS = madao_config.ao_channels
+AO_RATE = madao_config.ao_rate
+AO_BYTE_FORMAT = madao_config.ao_byte_format
+
+def _get_ao_byte_format():
+    """Resolve optional byte format from env configuration."""
+    if AO_BYTE_FORMAT == "native":
+        return getattr(ao, "AO_FMT_NATIVE", None)
+    return getattr(ao, "AO_FMT_LITTLE", getattr(ao, "AO_FMT_NATIVE", None))
+
+def _build_aodev():
+    """Create a global AO device from env config with fallback."""
+    kwargs = {
+        "bits": AO_BITS,
+        "rate": AO_RATE,
+        "channels": AO_CHANNELS
+    }
+
+    byte_format = _get_ao_byte_format()
+    if byte_format is not None:
+        kwargs["byte_format"] = byte_format
+
+    if AO_DRIVER:
+        try:
+            return ao.AudioDevice(AO_DRIVER, **kwargs)
+        except TypeError:
+            return ao.AudioDevice(AO_DRIVER)
+
+    try:
+        return ao.AudioDevice(0, **kwargs)
+    except TypeError:
+        return ao.AudioDevice(0)
+
+AODEV = _build_aodev()
 
 class Player(object):
     """The Player class provides an audio stream for a file."""
