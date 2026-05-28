@@ -22,7 +22,7 @@ CART_TYPES = [
 AUTOMATION_CARTS = [
     {
         "type": "StationID",
-        "minute": 0,
+        "minute": 5,
         "max_delta": 6000
     },
      {
