@@ -41,7 +41,7 @@ def _build_aodev():
 
     try:
         return ao.AudioDevice(0, **kwargs)
-    except TypeError:
+    except ao.aoError:
         return ao.AudioDevice(0)
 
 AODEV = _build_aodev()
