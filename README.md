@@ -38,6 +38,14 @@ stuck in the kernel (state `D`) and where:
 
 ## Development
 
+Run the unit tests from the repository root (Python 2.7, no extra packages):
+
+    python -m unittest discover -b -s test -p "test_*.py"
+
+The tests use fakes instead of audio hardware, the music library share and
+the server API, so they run anywhere. `test/manual/` has scripts that use the real audio device,
+the real server API and a Tk window.
+
     pylint **/*.py > lint.log
 
 ## TODO
@@ -49,3 +57,4 @@ stuck in the kernel (state `D`) and where:
 - add hourly reload to Cart Machine
 - Large queries in DJ Studio interrupt audio streaming (use multiprocess)
 - Consider combining the three modules into one window
+- replace pyao (startup prints a garbage libao channel matrix warning, probably uninitialized memory)
