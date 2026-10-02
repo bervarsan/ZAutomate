@@ -2,6 +2,7 @@
 
 """The Automation module provides a GUI for radio automation."""
 import sys
+import traceback
 import Tkinter
 from Tkinter import Label, StringVar, Button, Frame, Scrollbar, Listbox
 import diagnostics
@@ -9,7 +10,7 @@ from cartqueue import CartQueue
 from meter import Meter
 
 METER_WIDTH = 800
-QUEUE_MONITOR_INTERVAL = 100
+QUEUE_TICK_INTERVAL = 100
 
 STATE_STOPPED = 0
 STATE_PLAYING = 1
@@ -33,6 +34,8 @@ TEXT_BUTTON = {
 TEXT_PLAYLIST_TIME = "Start Time"
 TEXT_PLAYLIST_TRACK = "Track"
 TEXT_PLAYLIST_ARTIST = "Artist"
+TEXT_LOADING = " (loading)"
+TEXT_NO_TIME = "--:--:-- --"
 
 class Automation(Frame):
     """The Automation class is a GUI that provides radio automation."""
@@ -42,7 +45,6 @@ class Automation(Frame):
 
     _meter = None
     _cart_queue = None
-    _queue_monitoring = False
 
     _list_time = None
     _list_track = None
@@ -93,14 +95,15 @@ class Automation(Frame):
         inner_playlist.grid(row=1, column=0, columnspan=3)
         playlist.grid(row=4, column=0, columnspan=4)
 
-        # initialize cart queue
+        # initialize cart queue, which fills itself in the background
         self._cart_queue = CartQueue(self._cart_start, self._cart_stop, self._update_ui)
-        self._cart_queue.add_tracks()
         self._update_ui()
 
         # begin the event loop
         self.master.protocol("WM_DELETE_WINDOW", self.master.destroy)
         self.master.title(TEXT_TITLE)
+
+        self.after(0, self._tick)
 
         if auto_start:
             self.after(0, self._update_state)
@@ -130,9 +133,12 @@ class Automation(Frame):
             print "Stopping Automation after this track..."
             self._cart_queue.stop_soft()
             self._state = STATE_STOPPING
+            if not self._cart_queue.is_busy():
+                # nothing was playing, so there is nothing to wait for
+                self._state = STATE_STOPPED
         elif self._state is STATE_STOPPING:
             print "Stopping Automation immediately."
-            self._cart_queue.transition()
+            self._cart_queue.stop_hard()
             self._state = STATE_STOPPED
         self._update_ui()
 
@@ -140,10 +146,6 @@ class Automation(Frame):
         """Start the meter when a cart starts."""
         self._meter.start()
         self._update_ui()
-
-        if not self._queue_monitoring:
-            self._queue_monitoring = True
-            self.after(QUEUE_MONITOR_INTERVAL, self._monitor_cart_queue)
 
     def _cart_stop(self):
         """Reset the meter when a cart stops.
@@ -156,22 +158,18 @@ class Automation(Frame):
             self._state = STATE_STOPPED
             self._update_ui()
 
-    def _monitor_cart_queue(self):
-        """Poll playback completion from the Tk main loop."""
-        queue = self._cart_queue.get_queue()
+    def _tick(self):
+        """Advance the cart queue from the Tk main loop.
 
-        if len(queue) is 0:
-            self._queue_monitoring = False
-            return
-
-        if not queue[0].is_playing():
-            self._cart_queue.transition()
-            self._update_ui()
-
-        if self._state is STATE_PLAYING or self._state is STATE_STOPPING:
-            self.after(QUEUE_MONITOR_INTERVAL, self._monitor_cart_queue)
-        else:
-            self._queue_monitoring = False
+        The next tick is always scheduled, so an error in one tick can't
+        stop automation for good.
+        """
+        try:
+            self._cart_queue.tick()
+        except Exception:
+            traceback.print_exc()
+        finally:
+            self.after(QUEUE_TICK_INTERVAL, self._tick)
 
     def _update_ui(self):
         """Update the button and playlist."""
@@ -183,16 +181,25 @@ class Automation(Frame):
         self._list_artist.delete(0, Tkinter.END)
 
         for cart in self._cart_queue.get_queue():
-            self._list_time.insert(Tkinter.END, cart.start_time.strftime("%I:%M:%S %p"))
-            self._list_track.insert(Tkinter.END, cart.title)
+            if cart.start_time is None:
+                start_time = TEXT_NO_TIME
+            else:
+                start_time = cart.start_time.strftime("%I:%M:%S %p")
+
+            title = cart.title
+            if not cart.is_ready():
+                title += TEXT_LOADING
+
+            self._list_time.insert(Tkinter.END, start_time)
+            self._list_track.insert(Tkinter.END, title)
             self._list_artist.insert(Tkinter.END, cart.issuer)
 
     def _get_meter_data(self):
-        """Get meter data for the first track in the queue."""
-        queue = self._cart_queue.get_queue()
+        """Get meter data for the item that is playing."""
+        cart = self._cart_queue.get_current()
 
-        if len(queue) > 0:
-            return queue[0].get_meter_data()
+        if cart is not None:
+            return cart.get_meter_data()
         else:
             return None
 

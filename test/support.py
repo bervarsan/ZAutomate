@@ -4,6 +4,7 @@ Importing this module puts app/ on the path and replaces the pymad and
 pyao modules with fakes, so the tests run without audio hardware, the
 music library share or the server API. Import it before any app module.
 """
+import datetime
 import os
 import sys
 import threading
@@ -141,6 +142,83 @@ fake_ao.AO_FMT_NATIVE = 4
 
 sys.modules["mad"] = fake_mad
 sys.modules["ao"] = fake_ao
+
+class FakeCart(object):
+    """Stands in for cart.Cart in queue tests. Its state is set by hand."""
+
+    def __init__(self, cart_id, issuer=None, cart_type="N", length=180000, ready=True):
+        self.cart_id = cart_id
+        self.title = "Title " + str(cart_id)
+        self.issuer = issuer if issuer is not None else "Artist " + str(cart_id)
+        self.cart_type = cart_type
+        self.filename = "/media/Jemaine/" + str(cart_id) + ".mp3"
+        self.start_time = None
+
+        self.ready = ready
+        self.failed = False
+        self.playing = False
+        self.start_result = True
+        self.error = None
+        self.length_ms = length
+
+        self.prefetches = 0
+        self.starts = 0
+        self.stops = 0
+
+    def prefetch(self):
+        self.prefetches += 1
+
+    def is_ready(self):
+        return self.ready
+
+    def is_failed(self):
+        return self.failed
+
+    def is_playing(self):
+        return self.playing
+
+    def playback_error(self):
+        return self.error
+
+    def start(self, callback=None):
+        if not self.ready or not self.start_result:
+            return False
+        self.playing = True
+        self.starts += 1
+        return True
+
+    def stop(self):
+        self.playing = False
+        self.stops += 1
+
+    def end(self, error=None):
+        """Finish playback as if the stream ended."""
+        self.playing = False
+        self.error = error
+
+    def length(self):
+        return self.length_ms if self.ready else None
+
+    def expected_length(self):
+        return self.length_ms
+
+    def get_meter_data(self):
+        return (0, self.length_ms, self.title, self.issuer)
+
+    def __repr__(self):
+        return "FakeCart(%r)" % self.cart_id
+
+class FakeClock(object):
+    """A controllable replacement for datetime.datetime.now."""
+
+    def __init__(self, start=None):
+        self.time = start or datetime.datetime(2026, 9, 30, 10, 0, 0)
+
+    def __call__(self):
+        return self.time
+
+    def advance(self, seconds):
+        self.time += datetime.timedelta(seconds=seconds)
 
 class FakeResponse(object):
     """Stands in for requests.Response."""

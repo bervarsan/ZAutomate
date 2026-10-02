@@ -11,6 +11,7 @@ MadaoConfig = namedtuple("MadaoConfig", [
 ])
 
 ZaConfig = namedtuple("ZaConfig", [
+    "fallback_dir",
     "stall_seconds"
 ])
 
@@ -39,8 +40,9 @@ def load_madao_config():
 
 
 def load_za_config():
-    """Load diagnostics config from environment variables."""
+    """Load fallback and diagnostics config from environment variables."""
     return ZaConfig(
+        fallback_dir=os.environ.get("ZA_FALLBACK_DIR"),
         stall_seconds=_get_int("ZA_STALL_SECONDS", 30)
     )
 

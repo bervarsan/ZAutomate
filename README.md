@@ -20,6 +20,7 @@ Environment variables:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
+| `ZA_FALLBACK_DIR` | unset | local directory of MP3s to play when nothing is ready |
 | `ZA_STALL_SECONDS` | `30` | seconds of frozen GUI before thread stacks are dumped |
 | `ZA_AO_DRIVER`, `ZA_AO_BITS`, ... | | audio device settings, see `app/config.py` |
 
@@ -50,7 +51,6 @@ the real server API and a Tk window.
 
 ## TODO
 
-- review cartqueue for design flaws, possible infinite loop?
 - separate Logbook_Log into log_cart and log_track
 - create separate classes for carts and tracks
 - clean up print statements, use `logging` module
