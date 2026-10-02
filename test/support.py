@@ -141,3 +141,45 @@ fake_ao.AO_FMT_NATIVE = 4
 
 sys.modules["mad"] = fake_mad
 sys.modules["ao"] = fake_ao
+
+class FakeResponse(object):
+    """Stands in for requests.Response."""
+
+    def __init__(self, data=None, text="", error=None):
+        self.data = data
+        self.text = text
+        self.error = error
+
+    def raise_for_status(self):
+        if self.error is not None:
+            raise self.error
+
+    def json(self):
+        if isinstance(self.data, Exception):
+            raise self.data
+        return self.data
+
+class FakeSession(object):
+    """Stands in for requests.Session. Responses are looked up by URL."""
+
+    def __init__(self, responses=None):
+        self.responses = responses or {}
+        self.calls = []
+        self.lock = threading.Lock()
+
+    def _respond(self, method, url, params):
+        with self.lock:
+            self.calls.append((method, url, params, threading.current_thread().name))
+
+        response = self.responses.get(url, FakeResponse())
+        if callable(response):
+            response = response(params)
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+    def get(self, url, params=None, timeout=None):
+        return self._respond("GET", url, params)
+
+    def post(self, url, params=None, timeout=None):
+        return self._respond("POST", url, params)

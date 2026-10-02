@@ -129,7 +129,7 @@ class GridObj(Frame):
         self._rect["bg"] = COLOR_PLAYING
         self._cart.start()
 
-        database.log_cart(self._cart.cart_id)
+        database.log_cart_async(self._cart.cart_id)
 
     def stop(self):
         """Stop the grid object."""

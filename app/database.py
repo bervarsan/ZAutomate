@@ -1,5 +1,8 @@
 """The database module provides a collection of functions for the server API."""
+import Queue
+import threading
 import time
+import traceback
 from api_client import ApiClient, ApiError
 from cart import Cart
 
@@ -13,7 +16,48 @@ URL_STUDIOSEARCH = "https://wsbf.net/api/zautomate/studio_search.php"
 URL_LOG_CART = "https://wsbf.net/api/zautomate/log_cart.php"
 URL_LOG_TRACK = "https://wsbf.net/api/zautomate/log_track.php"
 
+CART_TYPE_IDS = {
+    "PSA": 0,
+    "Underwriting": 1,
+    "StationID": 2,
+    "Promotion": 3
+}
+
 CLIENT = ApiClient()
+
+def _make_cart(cart_res):
+    """Build a Cart from a server cart object."""
+    filename = LIBRARY_PREFIX + "carts/" + cart_res["filename"]
+    return Cart(cart_res["cartID"], cart_res["title"], cart_res["issuer"], cart_res["type"], filename)
+
+def _make_track(track_res, album_code_key, track_num_key, track_name_key):
+    """Build a Cart from a server track object."""
+    # TODO: move pathname building to Track constructor
+    filename = LIBRARY_PREFIX + track_res["file_name"]
+    track_id = track_res[album_code_key] + "-" + track_res[track_num_key]
+    return Cart(track_id, track_res[track_name_key], track_res["artist_name"], track_res["rotation"], filename)
+
+def _make_all(items, make):
+    """Build Carts from a list of server objects.
+
+    Malformed objects and carts whose audio file can't be loaded are skipped.
+    """
+    carts = []
+
+    if not isinstance(items, list):
+        return carts
+
+    for item in items:
+        try:
+            cart = make(item)
+        except (KeyError, TypeError, AttributeError), exc:
+            print time.asctime() + " :=: Database :: Skipping malformed item: " + repr(exc)
+            continue
+
+        if cart.is_playable():
+            carts.append(cart)
+
+    return carts
 
 def get_new_show_id(show_id):
     """Get a new show ID for queueing playlists.
@@ -29,40 +73,21 @@ def get_new_show_id(show_id):
 def get_cart(cart_type):
     """Get a random cart of a given type.
 
-    :param cart_type
+    :param cart_type: cart type name, such as "PSA"
+    :return: Cart, or None if there is no playable cart of this type
     """
-
-    # temporary code to transform cart_type to index
-    types = {
-        0: "PSA",
-        1: "Underwriting",
-        2: "StationID",
-        3: "Promotion"
-    }
-    for t in types:
-        if types[t] is cart_type:
-            cart_type = t
-
     try:
         # attempt to find a valid cart
-        count = 0
-        while count < 5:
-            # fetch a random cart
-            cart_res = CLIENT.get_json(URL_AUTOCART, params={"type": cart_type})
+        for _ in range(5):
+            cart_res = CLIENT.get_json(URL_AUTOCART, params={"type": CART_TYPE_IDS.get(cart_type, cart_type)})
 
             # return if cart type is empty
-            if cart_res is None:
+            if not cart_res:
                 return None
 
-            # construct cart
-            filename = LIBRARY_PREFIX + "carts/" + cart_res["filename"]
-            cart = Cart(cart_res["cartID"], cart_res["title"], cart_res["issuer"], cart_res["type"], filename)
-
-            # verify cart filename
-            if cart.is_playable():
-                return cart
-            else:
-                count += 1
+            carts = _make_all([cart_res], _make_cart)
+            if carts:
+                return carts[0]
     except ApiError:
         print time.asctime() + " :=: Error: Could not fetch cart."
 
@@ -73,24 +98,13 @@ def get_playlist(show_id):
 
     :param show_id: show ID
     """
-    playlist = []
-
     try:
         playlist_res = CLIENT.get_json(URL_AUTOLOAD, params={"showid": show_id})
-
-        for track_res in playlist_res:
-            # TODO: move pathname building to Track constructor
-            filename = LIBRARY_PREFIX + track_res["file_name"]
-            track_id = track_res["lb_album_code"] + "-" + track_res["lb_track_num"]
-
-            track = Cart(track_id, track_res["lb_track_name"], track_res["artist_name"], track_res["rotation"], filename)
-
-            if track.is_playable():
-                playlist.append(track)
     except ApiError:
         print "Error: Could not fetch playlist."
+        return []
 
-    return playlist
+    return _make_all(playlist_res, lambda t: _make_track(t, "lb_album_code", "lb_track_num", "lb_track_name"))
 
 def get_carts():
     """Load a dictionary of cart arrays for each cart type."""
@@ -104,16 +118,7 @@ def get_carts():
     try:
         for cart_type in carts:
             carts_res = CLIENT.get_json(URL_CARTLOAD, params={"type": cart_type})
-
-            for cart_res in carts_res:
-                # TODO: move pathname building to Cart constructor
-                filename = LIBRARY_PREFIX + "carts/" + cart_res["filename"]
-
-                cart = Cart(cart_res["cartID"], cart_res["title"], cart_res["issuer"], cart_res["type"], filename)
-
-                if cart.is_playable():
-                    carts[cart_type].append(cart)
-
+            carts[cart_type] = _make_all(carts_res, _make_cart)
     except ApiError:
         print time.asctime() + " :=: Error: Could not fetch carts."
 
@@ -124,27 +129,17 @@ def search_library(query):
 
     :param query: search term
     """
-    results = []
-
     try:
         results_res = CLIENT.get_json(URL_STUDIOSEARCH, params={"query": query})
-
-        for cart_res in results_res["carts"]:
-            filename = LIBRARY_PREFIX + "carts/" + cart_res["filename"]
-
-            cart = Cart(cart_res["cartID"], cart_res["title"], cart_res["issuer"], cart_res["type"], filename)
-            if cart.is_playable():
-                results.append(cart)
-
-        for track_res in results_res["tracks"]:
-            filename = LIBRARY_PREFIX + track_res["file_name"]
-            track_id = track_res["album_code"] + "-" + track_res["track_num"]
-
-            track = Cart(track_id, track_res["track_name"], track_res["artist_name"], track_res["rotation"], filename)
-            if track.is_playable():
-                results.append(track)
     except ApiError:
         print "Error: Could not fetch search results."
+        return []
+
+    if not isinstance(results_res, dict):
+        return []
+
+    results = _make_all(results_res.get("carts"), _make_cart)
+    results.extend(_make_all(results_res.get("tracks"), lambda t: _make_track(t, "album_code", "track_num", "track_name")))
 
     return results
 
@@ -153,6 +148,8 @@ def log_cart(cart_id):
 
     :param cart_id: cart ID, or [album_code]-[track_num] for a track
     """
+    cart_id = str(cart_id)
+
     try:
         if cart_id.isdigit():
             text = CLIENT.post_text(URL_LOG_CART, params={"cartid": cart_id})
@@ -164,3 +161,34 @@ def log_cart(cart_id):
         print text
     except ApiError:
         print time.asctime() + " :=: Caught error: Could not access cart logger."
+
+_LOG_QUEUE = Queue.Queue()
+_LOG_THREAD = None
+_LOG_THREAD_LOCK = threading.Lock()
+
+def _log_worker():
+    """Log carts in the order they were queued."""
+    while True:
+        cart_id = _LOG_QUEUE.get()
+
+        try:
+            log_cart(cart_id)
+        except Exception:
+            traceback.print_exc()
+
+def log_cart_async(cart_id):
+    """Log a cart or track from a background thread.
+
+    The GUI never waits on the server, and carts are logged in order.
+
+    :param cart_id: cart ID, or [album_code]-[track_num] for a track
+    """
+    global _LOG_THREAD
+
+    with _LOG_THREAD_LOCK:
+        if _LOG_THREAD is None:
+            _LOG_THREAD = threading.Thread(target=_log_worker, name="CartLogger")
+            _LOG_THREAD.setDaemon(True)
+            _LOG_THREAD.start()
+
+    _LOG_QUEUE.put(cart_id)

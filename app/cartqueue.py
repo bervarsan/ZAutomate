@@ -108,7 +108,7 @@ class CartQueue(object):
         self._queue[0].start()
         self._on_cart_start()
 
-        database.log_cart(self._queue[0].cart_id)
+        database.log_cart_async(self._queue[0].cart_id)
 
     def _dequeue(self):
         """Stop and dequeue the first track in the queue."""
