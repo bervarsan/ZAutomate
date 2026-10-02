@@ -1,4 +1,9 @@
-"""The database module provides a collection of functions for the server API."""
+"""The database module provides a collection of functions for the server API.
+
+These functions only build Cart objects; they never open the audio files,
+which live on the music library share. Carts are copied to local disk
+when they are prefetched (see the cache module).
+"""
 import Queue
 import threading
 import time
@@ -38,10 +43,7 @@ def _make_track(track_res, album_code_key, track_num_key, track_name_key):
     return Cart(track_id, track_res[track_name_key], track_res["artist_name"], track_res["rotation"], filename)
 
 def _make_all(items, make):
-    """Build Carts from a list of server objects.
-
-    Malformed objects and carts whose audio file can't be loaded are skipped.
-    """
+    """Build Carts from a list of server objects, skipping malformed ones."""
     carts = []
 
     if not isinstance(items, list):
@@ -49,13 +51,9 @@ def _make_all(items, make):
 
     for item in items:
         try:
-            cart = make(item)
+            carts.append(make(item))
         except (KeyError, TypeError, AttributeError), exc:
             print time.asctime() + " :=: Database :: Skipping malformed item: " + repr(exc)
-            continue
-
-        if cart.is_playable():
-            carts.append(cart)
 
     return carts
 
@@ -74,24 +72,19 @@ def get_cart(cart_type):
     """Get a random cart of a given type.
 
     :param cart_type: cart type name, such as "PSA"
-    :return: Cart, or None if there is no playable cart of this type
+    :return: Cart, or None if there is no cart of this type
     """
     try:
-        # attempt to find a valid cart
-        for _ in range(5):
-            cart_res = CLIENT.get_json(URL_AUTOCART, params={"type": CART_TYPE_IDS.get(cart_type, cart_type)})
-
-            # return if cart type is empty
-            if not cart_res:
-                return None
-
-            carts = _make_all([cart_res], _make_cart)
-            if carts:
-                return carts[0]
+        cart_res = CLIENT.get_json(URL_AUTOCART, params={"type": CART_TYPE_IDS.get(cart_type, cart_type)})
     except ApiError:
         print time.asctime() + " :=: Error: Could not fetch cart."
+        return None
 
-    return None
+    if not cart_res:
+        return None
+
+    carts = _make_all([cart_res], _make_cart)
+    return carts[0] if carts else None
 
 def get_playlist(show_id):
     """Get the playlist from a past show.

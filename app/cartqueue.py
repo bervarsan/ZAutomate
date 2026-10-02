@@ -114,7 +114,7 @@ def load_fallback_cart(directory=None):
         return None
 
     name = random.choice(names)
-    return Cart(None, os.path.splitext(name)[0], FALLBACK_TYPE, FALLBACK_TYPE, os.path.join(directory, name))
+    return Cart(None, os.path.splitext(name)[0], FALLBACK_TYPE, FALLBACK_TYPE, os.path.join(directory, name), cached=False)
 
 def _spawn_thread(target):
     """Run a function in a daemon thread."""

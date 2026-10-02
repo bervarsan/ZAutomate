@@ -5,7 +5,7 @@ import threading
 import unittest
 
 import support
-from support import FakeAudio, FakeMadFile, FakeResponse, FakeSession, wait_until
+from support import FakeResponse, FakeSession, wait_until
 
 import requests
 import database
@@ -29,19 +29,8 @@ CART = {
 }
 
 
-PLAYABLE_FILES = [
-    "/media/Jemaine/s/i/Sierra Ferrell - Jeremiah.mp3",
-    "/media/Jemaine/s/i/x.mp3",
-    "/media/Jemaine/carts/give-blood.mp3"
-]
-
-
 class DatabaseTest(unittest.TestCase):
     def setUp(self):
-        FakeMadFile.files.clear()
-        for path in PLAYABLE_FILES:
-            FakeMadFile.files[path] = FakeAudio()
-
         self.client = database.CLIENT
         self.session = FakeSession()
         database.CLIENT = ApiClient(session=self.session)
@@ -52,7 +41,7 @@ class DatabaseTest(unittest.TestCase):
     def respond(self, url, response):
         self.session.responses[url] = response
 
-    def test_get_playlist_builds_tracks(self):
+    def test_get_playlist_builds_tracks_without_opening_files(self):
         self.respond(database.URL_AUTOLOAD, FakeResponse([TRACK]))
 
         tracks = database.get_playlist(25608)
@@ -63,7 +52,8 @@ class DatabaseTest(unittest.TestCase):
         self.assertEqual("Jeremiah", tracks[0].title)
         self.assertEqual("Sierra Ferrell", tracks[0].issuer)
         self.assertEqual("N", tracks[0].cart_type)
-        self.assertEqual(1, FakeMadFile.files["/media/Jemaine/s/i/Sierra Ferrell - Jeremiah.mp3"].opens)
+        self.assertEqual("/media/Jemaine/s/i/Sierra Ferrell - Jeremiah.mp3", tracks[0].filename)
+        self.assertEqual(None, tracks[0].length())
 
     def test_get_playlist_skips_malformed_tracks(self):
         broken = dict(TRACK)
@@ -72,12 +62,6 @@ class DatabaseTest(unittest.TestCase):
         self.respond(database.URL_AUTOLOAD, FakeResponse([TRACK, broken, None]))
 
         self.assertEqual(1, len(database.get_playlist(1)))
-
-    def test_get_playlist_skips_unplayable_tracks(self):
-        del FakeMadFile.files["/media/Jemaine/s/i/Sierra Ferrell - Jeremiah.mp3"]
-        self.respond(database.URL_AUTOLOAD, FakeResponse([TRACK]))
-
-        self.assertEqual([], database.get_playlist(1))
 
     def test_get_playlist_handles_unexpected_responses(self):
         self.respond(database.URL_AUTOLOAD, FakeResponse(None))
@@ -102,7 +86,7 @@ class DatabaseTest(unittest.TestCase):
         self.assertEqual({"type": 0}, self.session.calls[0][2])
         self.assertEqual("108", cart.cart_id)
         self.assertEqual("PSA", cart.cart_type)
-        self.assertEqual(1, FakeMadFile.files["/media/Jemaine/carts/give-blood.mp3"].opens)
+        self.assertEqual("/media/Jemaine/carts/give-blood.mp3", cart.filename)
 
     def test_get_cart_returns_none_without_carts(self):
         self.respond(database.URL_AUTOCART, FakeResponse(None))

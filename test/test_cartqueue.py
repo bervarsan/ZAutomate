@@ -5,7 +5,7 @@ import datetime
 import unittest
 
 import support
-from support import FakeAudio, FakeCart, FakeClock, FakeMadFile, wait_until
+from support import FakeAudio, FakeCache, FakeCart, FakeClock, FakeMadFile, wait_until
 
 import cartqueue
 from cart import Cart
@@ -480,12 +480,15 @@ class CartInsertionTest(CartQueueTestCase):
 class RealCartTest(CartQueueTestCase):
     def test_real_carts_play_through_the_queue(self):
         FakeMadFile.files.clear()
+        file_cache = FakeCache()
         tracks = []
 
         for i in range(3):
             remote = "/media/Jemaine/t%d.mp3" % i
-            FakeMadFile.files[remote] = FakeAudio(frames=3)
-            tracks.append(Cart("T%d-1" % i, "Track %d" % i, "Artist %d" % i, "N", remote))
+            local = "/cache/t%d.mp3" % i
+            FakeMadFile.files[local] = FakeAudio(frames=3)
+            file_cache.finish(remote, local)
+            tracks.append(Cart("T%d-1" % i, "Track %d" % i, "Artist %d" % i, "N", remote, file_cache=file_cache))
 
         self.load(tracks)
         self.queue.start()

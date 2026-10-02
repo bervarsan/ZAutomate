@@ -171,6 +171,7 @@ class CartMachine(Frame):
 
     def _get_meter_data(self):
         """Get meter data for the currently active cart."""
-        return self._grid.get_active_cell().get_cart().get_meter_data()
+        cell = self._grid.get_active_cell()
+        return None if cell is None else cell.get_cart().get_meter_data()
 
 CartMachine()

@@ -143,6 +143,33 @@ fake_ao.AO_FMT_NATIVE = 4
 sys.modules["mad"] = fake_mad
 sys.modules["ao"] = fake_ao
 
+class FakeCache(object):
+    """Stands in for cache.FileCache, with copies finished by hand."""
+
+    def __init__(self):
+        self.states = {}
+        self.paths = {}
+        self.requests = []
+
+    def request(self, remote_path):
+        self.requests.append(remote_path)
+        return self.states.setdefault(remote_path, "pending")
+
+    def state(self, remote_path):
+        return self.states.get(remote_path)
+
+    def local_path(self, remote_path):
+        if self.states.get(remote_path) != "ready":
+            return None
+        return self.paths[remote_path]
+
+    def finish(self, remote_path, local_path=None):
+        self.states[remote_path] = "ready"
+        self.paths[remote_path] = local_path or remote_path
+
+    def fail(self, remote_path):
+        self.states[remote_path] = "failed"
+
 class FakeCart(object):
     """Stands in for cart.Cart in queue tests. Its state is set by hand."""
 

@@ -1,5 +1,6 @@
 """The cartgrid module provides the Grid class."""
 import time
+import traceback
 import Tkinter
 from Tkinter import Frame, Canvas
 import database
@@ -7,6 +8,10 @@ import database
 CART_WIDTH = 175
 CART_HEIGHT = 75
 GRID_MONITOR_INTERVAL = 100
+GRID_REFRESH_INTERVAL = 500
+
+TEXT_LOADING = "loading..."
+TEXT_UNAVAILABLE = "unavailable"
 
 COLOR_DEFAULT = "#DDDDDD"
 COLOR_PLAYING = "#00FF00"
@@ -59,6 +64,7 @@ class GridObj(Frame):
     _title = None
     _issuer = None
     _length = None
+    _length_text = None
 
     _on_left_click = None
     _on_right_click = None
@@ -103,17 +109,37 @@ class GridObj(Frame):
         :param cart
         """
         self._cart = cart
-
-        length = self._cart.get_meter_data()[1] / 1000
+        self._cart.prefetch()
 
         self._rect.itemconfigure(self._title, text=self._cart.title)
-        self._rect.itemconfigure(self._issuer, text=(self._cart.issuer + " " + self._cart.cart_id))
-        self._rect.itemconfigure(self._length, text=get_fmt_time(length))
-        self._rect["bg"] = COLOR_TYPES_NEW[self._cart.cart_type]
+        self._rect.itemconfigure(self._issuer, text=(self._cart.issuer + " " + str(self._cart.cart_id)))
+        self._rect["bg"] = COLOR_TYPES_NEW.get(self._cart.cart_type, COLOR_DEFAULT)
+
+        self._length_text = None
+        self.refresh()
+
+    def refresh(self):
+        """Show the cart's length once its file is ready."""
+        if self._cart is None:
+            return
+
+        if self._cart.is_ready():
+            text = get_fmt_time(self._cart.length() / 1000)
+        elif self._cart.is_failed():
+            # the cache retries the copy once its retry delay has passed
+            self._cart.prefetch()
+            text = TEXT_UNAVAILABLE
+        else:
+            text = TEXT_LOADING
+
+        if text != self._length_text:
+            self._rect.itemconfigure(self._length, text=text)
+            self._length_text = text
 
     def remove_cart(self):
         """Remove a cart from the grid object."""
         self._cart = None
+        self._length_text = None
         self._rect.itemconfigure(self._title, text="")
         self._rect.itemconfigure(self._issuer, text="")
         self._rect.itemconfigure(self._length, text="")
@@ -124,17 +150,23 @@ class GridObj(Frame):
         return self._is_playing
 
     def start(self):
-        """Start the grid object."""
+        """Start the grid object.
+
+        :return: True if the cart started playing
+        """
+        if not self._cart.start():
+            return False
+
         self._is_playing = True
         self._rect["bg"] = COLOR_PLAYING
-        self._cart.start()
 
         database.log_cart_async(self._cart.cart_id)
+        return True
 
     def stop(self):
         """Stop the grid object."""
         self._is_playing = False
-        self._rect["bg"] = COLOR_TYPES_PLAYED[self._cart.cart_type]
+        self._rect["bg"] = COLOR_TYPES_PLAYED.get(self._cart.cart_type, COLOR_DEFAULT)
         self._cart.stop()
 
     def _left_click(self, *args):
@@ -163,6 +195,7 @@ class Grid(object):
     _on_left_click = None
 
     def __init__(self, parent, rows, cols, enable_remove, on_cart_start, on_cart_stop, on_cart_end, on_left_click):
+        self._parent = parent
         self._rows = rows
         self._cols = cols
 
@@ -178,6 +211,18 @@ class Grid(object):
         self._on_cart_stop = on_cart_stop
         self._on_cart_end = on_cart_end
         self._on_left_click = on_left_click
+
+        self._parent.after(GRID_REFRESH_INTERVAL, self._refresh)
+
+    def _refresh(self):
+        """Update every cell from the Tk main loop."""
+        try:
+            for key in self._grid.keys():
+                self._grid[key].refresh()
+        except Exception:
+            traceback.print_exc()
+        finally:
+            self._parent.after(GRID_REFRESH_INTERVAL, self._refresh)
 
     def has_cart(self, key):
         """Get whether a cell in the grid has a cart.
@@ -206,11 +251,15 @@ class Grid(object):
         """Start a cart.
 
         :param key
+        :return: True if the cart started playing
         """
-        self._grid[key].start()
+        if not self._grid[key].start():
+            return False
+
         self._active_cell = self._grid[key]
         self._on_cart_start()
         self._grid[key].after(GRID_MONITOR_INTERVAL, lambda: self._monitor_cart(key))
+        return True
 
     def stop(self):
         """Stop the active cart."""

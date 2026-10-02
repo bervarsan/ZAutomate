@@ -11,6 +11,9 @@ MadaoConfig = namedtuple("MadaoConfig", [
 ])
 
 ZaConfig = namedtuple("ZaConfig", [
+    "cache_dir",
+    "copy_timeout",
+    "cache_max_entries",
     "fallback_dir",
     "stall_seconds"
 ])
@@ -28,6 +31,18 @@ def _get_int(name, default):
         return default
 
 
+def _get_float(name, default):
+    """Read a float environment variable with fallback."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
 def load_madao_config():
     """Load madao runtime config from environment variables."""
     return MadaoConfig(
@@ -40,8 +55,13 @@ def load_madao_config():
 
 
 def load_za_config():
-    """Load fallback and diagnostics config from environment variables."""
+    """Load file cache, fallback and diagnostics config from environment variables."""
+    default_cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "zautomate")
+
     return ZaConfig(
+        cache_dir=os.environ.get("ZA_CACHE_DIR", default_cache_dir),
+        copy_timeout=_get_float("ZA_COPY_TIMEOUT", 90.0),
+        cache_max_entries=_get_int("ZA_CACHE_MAX_ENTRIES", 300),
         fallback_dir=os.environ.get("ZA_FALLBACK_DIR"),
         stall_seconds=_get_int("ZA_STALL_SECONDS", 30)
     )
