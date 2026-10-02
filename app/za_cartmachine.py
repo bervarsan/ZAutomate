@@ -5,6 +5,7 @@ import random
 import Tkinter
 from Tkinter import Frame, Label, Button
 import database
+import diagnostics
 from cartgrid import Grid
 from grid_math import progression
 from meter import Meter
@@ -54,6 +55,7 @@ class CartMachine(Frame):
     def __init__(self):
         """Construct a CartMachine window."""
         Frame.__init__(self)
+        diagnostics.enable(self)
 
         # make the window resizable
         top = self.winfo_toplevel()

@@ -4,6 +4,7 @@
 import sys
 import Tkinter
 from Tkinter import Label, StringVar, Button, Frame, Scrollbar, Listbox
+import diagnostics
 from cartqueue import CartQueue
 from meter import Meter
 
@@ -53,6 +54,7 @@ class Automation(Frame):
         :param auto_start: begin playback once the UI is ready
         """
         Frame.__init__(self)
+        diagnostics.enable(self)
 
         # initialize title
         title = Label(self.master, font=FONT_TITLE, text=TEXT_TITLE)

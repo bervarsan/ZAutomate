@@ -10,6 +10,10 @@ MadaoConfig = namedtuple("MadaoConfig", [
     "ao_byte_format"
 ])
 
+ZaConfig = namedtuple("ZaConfig", [
+    "stall_seconds"
+])
+
 
 def _get_int(name, default):
     """Read an integer environment variable with fallback."""
@@ -34,4 +38,12 @@ def load_madao_config():
     )
 
 
+def load_za_config():
+    """Load diagnostics config from environment variables."""
+    return ZaConfig(
+        stall_seconds=_get_int("ZA_STALL_SECONDS", 30)
+    )
+
+
 madao_config = load_madao_config()
+za_config = load_za_config()

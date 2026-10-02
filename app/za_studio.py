@@ -6,6 +6,7 @@ import threading
 import Tkinter
 from Tkinter import Frame, Label, BooleanVar, Checkbutton, Entry, Button
 import database
+import diagnostics
 from dualbox import DualBox
 from cartgrid import Grid
 from grid_math import get_next_key
@@ -40,6 +41,7 @@ class Studio(Frame):
     def __init__(self):
         """Construct a Studio window."""
         Frame.__init__(self)
+        diagnostics.enable(self)
 
         # make the window resizable
         top = self.master.winfo_toplevel()
