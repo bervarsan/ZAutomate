@@ -30,6 +30,7 @@ class Meter(Canvas):
     """The Meter class is a UI element that shows the elapsed time of a track."""
     _data_callback = None
     _is_playing = False
+    _timer = None
 
     _position = None
     _length = None
@@ -72,6 +73,8 @@ class Meter(Canvas):
 
     def _run(self):
         """Update the meter from the Tk main loop."""
+        self._timer = None
+
         if not self._is_playing:
             return
 
@@ -101,19 +104,27 @@ class Meter(Canvas):
         self.itemconfigure(self._artist, text=artist)
         self.coords(self._bar_fg, self._x0, self._y0, int(self._width * value), self._y1)
 
-        self.after(int(METER_INTERVAL * 1000), self._run)
+        self._timer = self.after(int(METER_INTERVAL * 1000), self._run)
+
+    def _cancel_timer(self):
+        """Cancel the pending update, so only one update loop ever runs."""
+        if self._timer is not None:
+            self.after_cancel(self._timer)
+            self._timer = None
 
     def start(self):
         """Start the meter."""
         if self._is_playing:
             return
 
+        self._cancel_timer()
         self._is_playing = True
         self._run()
 
     def reset(self):
         """Reset the meter."""
         self._is_playing = False
+        self._cancel_timer()
 
         self.itemconfigure(self._position, text=get_fmt_time(0))
         self.itemconfigure(self._length, text=get_fmt_time(0))
