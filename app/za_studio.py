@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
 """The Studio module provides a GUI for the digital library."""
-import multiprocessing as mp
+import Queue
+import threading
 import Tkinter
 from Tkinter import Frame, Label, BooleanVar, Checkbutton, Entry, Button
 import database
 from dualbox import DualBox
 from cartgrid import Grid
+from grid_math import get_next_key
 from meter import Meter
 
 METER_WIDTH = 1000
@@ -21,32 +23,6 @@ TEXT_AUTOSLOT = "Auto-queue tracks"
 TEXT_SEARCHBOX = "Search Box"
 TEXT_SEARCH = "Search"
 
-def get_next_key(rows, cols, key):
-    """Get the next cell to queue after a cell.
-
-    - each cell queues the cell below
-    - bottom cells queue the top cell in the next column
-    - the bottom right cell queues the top left cell
-
-    :param rows
-    :param cols
-    :param key
-    """
-    next_row = (int)(key[0])
-    next_col = (int)(key[2])
-
-    if next_row is rows:
-        if next_col is cols:
-            next_row = 1
-            next_col = 1
-        else:
-            next_row = 1
-            next_col += 1
-    else:
-        next_row += 1
-
-    return (str)(next_row) + "x" + (str)(next_col)
-
 class Studio(Frame):
     """The Studio class is a GUI for the digital library."""
     _meter = None
@@ -55,6 +31,10 @@ class Studio(Frame):
     _auto_queue = None
     _entry = None
     _search_results = None
+    _search_queue = None
+    _search_generation = 0
+    _search_pending = 0
+    _search_polling = False
     _selected_cart = None
 
     def __init__(self):
@@ -106,26 +86,72 @@ class Studio(Frame):
         # button.grid(row=GRID_ROWS + 3, column=5)
         button.pack(anchor=Tkinter.S)
 
+        self._search_queue = Queue.Queue()
+        self._search_results = []
+
         # begin the event loop
         self.master.protocol("WM_DELETE_WINDOW", self.master.destroy)
         self.master.title(TEXT_TITLE)
         self.master.mainloop()
 
-    def _search_internal(self):
-        """Search the digital library in a separate thread."""
-        query = self._entry.get()
+    def _search_internal(self, query, generation):
+        """Search the digital library outside the Tk main loop."""
+        error = None
+        results = []
 
-        if len(query) >= 3:
-            print "Searching library with query \"%s\"..." % query
+        try:
+            results = database.search_library(query)
+        except Exception, exc:
+            error = exc
 
-            self._search_results = database.search_library(query)
+        self._search_queue.put((generation, query, results, error))
+
+    def _poll_search_results(self):
+        """Apply completed search results from the Tk main loop."""
+        while True:
+            try:
+                generation, query, results, error = self._search_queue.get_nowait()
+            except Queue.Empty:
+                break
+
+            self._search_pending -= 1
+
+            if generation != self._search_generation:
+                continue
+
+            if error is not None:
+                print "Error: Could not complete search for \"%s\": %s" % (query, error)
+                continue
+
+            self._search_results = results
             self._dual_box.fill(self._search_results)
 
             print "Found %d results." % len(self._search_results)
 
+        if self._search_pending > 0:
+            self.after(100, self._poll_search_results)
+        else:
+            self._search_polling = False
+
     def search(self, *args):
         """Search the digital library."""
-        mp.Process(target=self._search_internal).start()
+        query = self._entry.get()
+
+        if len(query) < 3:
+            return
+
+        print "Searching library with query \"%s\"..." % query
+
+        self._search_generation += 1
+        self._search_pending += 1
+
+        worker = threading.Thread(target=self._search_internal, args=(query, self._search_generation))
+        worker.setDaemon(True)
+        worker.start()
+
+        if not self._search_polling:
+            self._search_polling = True
+            self.after(100, self._poll_search_results)
 
     def select_cart(self, index):
         """Select a cart from the search results.

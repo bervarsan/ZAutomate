@@ -6,6 +6,7 @@ import database
 
 CART_WIDTH = 175
 CART_HEIGHT = 75
+GRID_MONITOR_INTERVAL = 100
 
 COLOR_DEFAULT = "#DDDDDD"
 COLOR_PLAYING = "#00FF00"
@@ -126,7 +127,7 @@ class GridObj(Frame):
         """Start the grid object."""
         self._is_playing = True
         self._rect["bg"] = COLOR_PLAYING
-        self._cart.start(self._cart_end)
+        self._cart.start()
 
         database.log_cart(self._cart.cart_id)
 
@@ -209,6 +210,7 @@ class Grid(object):
         self._grid[key].start()
         self._active_cell = self._grid[key]
         self._on_cart_start()
+        self._grid[key].after(GRID_MONITOR_INTERVAL, lambda: self._monitor_cart(key))
 
     def stop(self):
         """Stop the active cart."""
@@ -243,6 +245,16 @@ class Grid(object):
         """
         if self._enable_remove and grid_obj.has_cart() and not grid_obj.is_playing():
             grid_obj.remove_cart()
+
+    def _monitor_cart(self, key):
+        """Poll playback completion from the Tk main loop."""
+        if self._active_cell is not self._grid[key]:
+            return
+
+        if self._active_cell.get_cart().is_playing():
+            self._grid[key].after(GRID_MONITOR_INTERVAL, lambda: self._monitor_cart(key))
+        else:
+            self._cart_end(key)
 
     def _cart_end(self, key):
         """Stop the active grid object.
